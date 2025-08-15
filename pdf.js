@@ -137,32 +137,33 @@ async function convertToPDF() {
     pdfDoc.setSubject(subject);
     pdfDoc.setKeywords([keywords]);
 
-   for (const file of reorderedFiles) {
-    const fileData = await fileToBase64(file);
+    for (const file of reorderedFiles) {
+        const fileData = await fileToBase64(file);
 
-    let img;
-    if (file.type === "image/png") {
-        img = await pdfDoc.embedPng(fileData);
-    } else if (file.type === "image/jpeg" || file.type === "image/jpg") {
-        img = await pdfDoc.embedJpg(fileData);
-    } else {
-        alert(`Unsupported image format: ${file.type}`);
-        continue;
+        let img;
+        if (file.type === "image/png") {
+            img = await pdfDoc.embedPng(fileData);
+        } else if (file.type === "image/jpeg" || file.type === "image/jpg") {
+            img = await pdfDoc.embedJpg(fileData);
+        } else {
+            alert(`Unsupported image format: ${file.type}`);
+            continue;
+        }
+
+        const imgWidth = img.width;
+        const imgHeight = img.height;
+
+        const pageWidth = 595.28; // A4 page width in points
+        const scaledHeight = (pageWidth * imgHeight) / imgWidth;
+
+        const page = pdfDoc.addPage([pageWidth, scaledHeight]);
+        page.drawImage(img, {
+            x: 0,
+            y: 0,
+            width: pageWidth,
+            height: scaledHeight
+        });
     }
-
-    const imgWidth = img.width;
-    const imgHeight = img.height;
-
-    // Set page size to image size (no scaling, no orientation change)
-    const page = pdfDoc.addPage([imgWidth, imgHeight]);
-    page.drawImage(img, {
-        x: 0,
-        y: 0,
-        width: imgWidth,
-        height: imgHeight
-    });
-}
-
 
     const pdfBytes = await pdfDoc.save();
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
