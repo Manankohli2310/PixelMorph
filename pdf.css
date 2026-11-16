@@ -761,7 +761,7 @@ body {
 .hidden { display: none !important; }
 
 .thank-you-content {
-    background: rgba(24, 22, 14, 0.92);
+    background: rgba(24, 22, 14, 0.267);
     border: 1px solid var(--card-border);
     padding: 34px 28px;
     border-radius: 18px;
