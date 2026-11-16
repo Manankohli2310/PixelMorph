@@ -1202,3 +1202,22 @@ body {
         grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
     }
 }
+
+/* =========================================================
+   CORNER FIX - thumbnails no longer poke out of the rounded border
+   (card radius 10px - 2px border = 8px inner radius)
+   ========================================================= */
+.reorder-grid .image-item.reorder-item {
+    border-radius: 10px;
+    overflow: hidden;
+    isolation: isolate;   /* keeps the clip working with blur/backdrop children */
+}
+
+.reorder-grid .image-item.reorder-item img {
+    border-radius: 8px;   /* round the picture itself, not just its parent */
+}
+
+.reorder-controls {
+    border-radius: 0 0 8px 8px;
+    overflow: hidden;
+}
