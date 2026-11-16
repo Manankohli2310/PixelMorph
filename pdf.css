@@ -669,7 +669,7 @@ body {
 }
 
 .form-group .input {
-    background: rgba(15, 13, 20, 0.8);
+    background: rgba(20, 19, 13, 0.8);
     border: 1px solid rgba(249, 115, 22, 0.18);
     color: #ffffff;
     font-size: 13px;
@@ -735,7 +735,7 @@ body {
 }
 
 .secondary-btn:hover {
-    background: rgba(30, 24, 40, 0.95);
+    background: rgba(40, 37, 24, 0.95);
     border-color: var(--pink-primary);
 }
 
@@ -761,7 +761,7 @@ body {
 .hidden { display: none !important; }
 
 .thank-you-content {
-    background: rgba(18, 14, 24, 0.92);
+    background: rgba(24, 22, 14, 0.92);
     border: 1px solid var(--card-border);
     padding: 34px 28px;
     border-radius: 18px;

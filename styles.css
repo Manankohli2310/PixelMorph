@@ -79,7 +79,7 @@ body::-webkit-scrollbar-track {
     width: 100vw;
     height: 100vh;
     margin: 0;
-    background: conic-gradient(from 0deg, rgb(60, 161, 127), rgb(79, 142, 167) , #ac47ca);
+    background: conic-gradient(from 0deg, rgb(60, 161, 127), rgb(79, 142, 167) , #e0ab48);
     animation: spinBlob 8s linear infinite;
 }
 
@@ -288,8 +288,7 @@ hr{
     box-shadow: rgb(43, 115, 91) 0px 50px 100px -20px, rgb(0, 0, 0) 0px 30px 60px -30px, rgb(43, 115, 91) 0px -2px 6px 0px inset;
 }
 .container2{
-    box-shadow: #8f3ba8 0px 50px 100px -20px, rgb(0, 0, 0) 0px 30px 60px -30px, #8f3ba8 0px -2px 6px 0px inset;
-
+    box-shadow: #a88c3b 0px 50px 100px -20px, rgb(0, 0, 0) 0px 30px 60px -30px, #a8913b 0px -2px 6px 0px inset;
 }
 .container3{
     box-shadow: rgb(63, 112, 131) 0px 50px 100px -20px, rgb(0, 0, 0) 0px 30px 60px -30px, rgb(63, 112, 131) 0px -2px 6px 0px inset;
