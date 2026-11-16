@@ -206,15 +206,15 @@ addMoreBtn.addEventListener('click', () => fileInput.click());
 ['dragenter', 'dragover'].forEach(name => {
     dropZone.addEventListener(name, (e) => {
         e.preventDefault();
-        dropZone.style.borderColor = '#d946ef';
-        dropZone.style.background = 'rgba(217, 70, 239, 0.08)';
+        dropZone.style.borderColor = '#efc246';
+        dropZone.style.background = 'rgba(239, 214, 70, 0.08)';
     });
 });
 
 ['dragleave', 'drop'].forEach(name => {
     dropZone.addEventListener(name, (e) => {
         e.preventDefault();
-        dropZone.style.borderColor = 'rgba(217, 70, 239, 0.24)';
+        dropZone.style.borderColor = 'rgba(239, 200, 70, 0.24)';
         dropZone.style.background = 'var(--card-bg)';
     });
 });
