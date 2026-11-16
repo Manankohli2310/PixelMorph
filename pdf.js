@@ -346,10 +346,25 @@ function moveImage(from, to) {
     if (to < 0 || to >= selectedImageFiles.length || from === to) return;
     const [moved] = selectedImageFiles.splice(from, 1);
     selectedImageFiles.splice(to, 0, moved);
-    renderImageGrid();
+    renderImageGrid(to);
 }
 
-function renderImageGrid() {
+// Scrolls the grid (only the grid, not the page) so the given item is fully visible
+function revealGridItem(index) {
+    const el = imageGrid.children[index];
+    if (!el) return;
+    const g = imageGrid.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    const pad = 12;
+    if (r.top < g.top) {
+        imageGrid.scrollTop -= (g.top - r.top) + pad;
+    } else if (r.bottom > g.bottom) {
+        imageGrid.scrollTop += (r.bottom - g.bottom) + pad;
+    }
+}
+
+function renderImageGrid(revealIdx) {
+    const savedScrollTop = imageGrid.scrollTop; // re-rendering would otherwise jump back to the top
     imageGrid.classList.add('reorder-grid');
     imageGrid.innerHTML = '';
     fileCountLabel.textContent = `${selectedImageFiles.length} image(s) selected`;
@@ -432,6 +447,9 @@ function renderImageGrid() {
         imageGrid.appendChild(item);
     });
 
+    imageGrid.scrollTop = savedScrollTop;
+    if (typeof revealIdx === 'number') revealGridItem(revealIdx);
+
     // Create Sortable only ONCE (old code created a new one on every render).
     // Dragging is allowed ONLY from the handle, so scrolling/tapping elsewhere never reorders.
     if (!reorderSortable) {
@@ -441,6 +459,13 @@ function renderImageGrid() {
             ghostClass: 'sortable-ghost',
             chosenClass: 'sortable-chosen',
             fallbackTolerance: 3,
+            // Auto-scroll the grid while dragging near its top/bottom edge
+            // (works for touch and mouse, the JS fallback is used on every device)
+            scroll: true,
+            forceAutoScrollFallback: true,
+            scrollSensitivity: 60,
+            scrollSpeed: 14,
+            bubbleScroll: true,
             onEnd() {
                 const reorderedIndices = Array.from(imageGrid.children).map(child => parseInt(child.dataset.index, 10));
                 selectedImageFiles = reorderedIndices.map(i => selectedImageFiles[i]);
