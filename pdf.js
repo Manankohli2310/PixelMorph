@@ -1,211 +1,947 @@
+// External Libraries (Loaded via CDN in HTML)
 const { PDFDocument } = PDFLib;
 
-let selectedFiles = [];
-let reorderedFiles = [];
-
-document.getElementById("uploadBox").addEventListener("click", () => {
-    document.getElementById("fileInput").click();
-});
-
-document.getElementById("fileInput").addEventListener("change", handleFileSelect);
-document.getElementById("convertButton").addEventListener("click", convertToPDF);
-
-const uploadBox = document.getElementById("uploadBox");
-uploadBox.addEventListener("dragover", handleDragOver);
-uploadBox.addEventListener("dragleave", handleDragLeave);
-uploadBox.addEventListener("drop", handleFileDrop);
-
-function handleDragOver(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    uploadBox.classList.add("dragging");
+// PDF.js Worker Configuration
+if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 }
 
-function handleDragLeave(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    uploadBox.classList.remove("dragging");
-}
+// =========================================================
+// 1. DOM Elements
+// =========================================================
+// Mode Tabs
+const tabImgToPdf = document.getElementById('tabImgToPdf');
+const tabPdfToImg = document.getElementById('tabPdfToImg');
+const sectionImgToPdf = document.getElementById('sectionImgToPdf');
+const sectionPdfToImg = document.getElementById('sectionPdfToImg');
 
-function handleFileDrop(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    uploadBox.classList.remove("dragging");
+// Images to PDF Elements
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('fileInput');
+const controlsCard = document.getElementById('controls-card');
+const fileCountLabel = document.getElementById('fileCountLabel');
+const addMoreBtn = document.getElementById('addMoreBtn');
+const imageGrid = document.getElementById('imageGrid');
+const pageLayoutSelect = document.getElementById('pageLayoutSelect');
+const scanFilterSelect = document.getElementById('scanFilterSelect');
+const docDetectBadge = document.getElementById('docDetectBadge');
 
-    const files = event.dataTransfer.files;
-    if (files && files.length > 0) {
-        handleFileSelect({ target: { files } });
-    }
-}
+const docNameInput = document.getElementById('docName');
+const authorNameInput = document.getElementById('authorName');
+const subjectInput = document.getElementById('subject');
+const keywordsInput = document.getElementById('keywords');
 
-// Pre-create empty boxes inside the grid when the page loads
-function createEmptyBoxes() {
-    const imageGrid = document.getElementById("imageGrid");
+const convertButton = document.getElementById('convertButton');
+const resetImagesBtn = document.getElementById('resetImagesBtn');
 
-    const numberOfBoxes = 4;
+// PDF to Images Elements
+const pdfDropZone = document.getElementById('pdfDropZone');
+const pdfFileInput = document.getElementById('pdfFileInput');
+const pdfExtractCard = document.getElementById('pdfExtractCard');
+const pdfFileNameLabel = document.getElementById('pdfFileNameLabel');
+const pdfPageCountLabel = document.getElementById('pdfPageCountLabel');
+const pdfPagesGrid = document.getElementById('pdfPagesGrid');
+const pdfExportFormat = document.getElementById('pdfExportFormat');
+const downloadAllImagesBtn = document.getElementById('downloadAllImagesBtn');
+const resetPdfBtn = document.getElementById('resetPdfBtn');
 
-    for (let i = 0; i < numberOfBoxes; i++) {
-        const imageItem = document.createElement("div");
-        imageItem.classList.add("image-item");
-        imageItem.setAttribute("data-index", i);
+// Overlays & Navigation
+const thankYouOverlay = document.getElementById('thankYouOverlay');
+const downloadButton = document.getElementById('downloadButton');
+const convertMoreButton = document.getElementById('convertMoreButton');
+const loadingOverlay = document.getElementById('loadingOverlay');
+const loadingTitle = document.getElementById('loadingTitle');
+const loadingText = document.getElementById('loadingText');
 
-        const placeholderText = document.createElement("span");
-        placeholderText.textContent = "No Image";
-        placeholderText.style.color = "#f0cefab9";
-        placeholderText.style.fontSize = "14px";
-        imageItem.style.display = "flex";
-        imageItem.style.justifyContent = "center";
-        imageItem.style.alignItems = "center";
-      
+const hamburgerBtn = document.getElementById('hamburger-btn');
+const navMenu = document.getElementById('nav-menu');
 
-        imageItem.appendChild(placeholderText);
+// State Variables
+let selectedImageFiles = [];
+let extractedPdfPages = [];
 
-        imageGrid.appendChild(imageItem);
-    }
+// =========================================================
+// 2. Navigation & Mode Switcher Listeners
+// =========================================================
+if (hamburgerBtn && navMenu) {
+    hamburgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hamburgerBtn.classList.toggle('active');
+        navMenu.classList.toggle('active');
+    });
 
-    new Sortable(imageGrid, {
-        onEnd() {
-            updateReorderedFiles();
+    document.addEventListener('click', (e) => {
+        if (!navMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+            hamburgerBtn.classList.remove('active');
+            navMenu.classList.remove('active');
         }
     });
+
+    navMenu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+            hamburgerBtn.classList.remove('active');
+            navMenu.classList.remove('active');
+        });
+    });
 }
 
-function handleFileSelect(event) {
-    const files = event.target.files || event.dataTransfer?.files;
-    const imageGrid = document.getElementById("imageGrid");
+tabImgToPdf.addEventListener('click', () => {
+    tabImgToPdf.classList.add('active');
+    tabPdfToImg.classList.remove('active');
+    sectionImgToPdf.style.display = 'block';
+    sectionPdfToImg.style.display = 'none';
+});
 
-    selectedFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+tabPdfToImg.addEventListener('click', () => {
+    tabPdfToImg.classList.add('active');
+    tabImgToPdf.classList.remove('active');
+    sectionImgToPdf.style.display = 'none';
+    sectionPdfToImg.style.display = 'block';
+});
 
-    if (selectedFiles.length > 0) {
-        imageGrid.innerHTML = "";
+// =========================================================
+// 3. Client-Side Document Auto-Detection Engine (Canvas)
+// =========================================================
+function analyzeIfDocument(file) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
 
-        selectedFiles.forEach((file, index) => {
-            const imageItem = document.createElement("div");
-            imageItem.classList.add("image-item");
-            imageItem.setAttribute("data-index", index);
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            const canvas = document.createElement('canvas');
+            const sampleSize = 160;
+            canvas.width = sampleSize;
+            canvas.height = sampleSize;
 
-            const img = document.createElement("img");
-            img.src = URL.createObjectURL(file);
-            img.style.width = "90px";
-            img.style.height = "90px";
-            img.style.objectFit = "cover";
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, sampleSize, sampleSize);
 
-            imageItem.appendChild(img);
-            imageGrid.appendChild(imageItem);
-        });
+            const imgData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+            const data = imgData.data;
+            const totalPixels = sampleSize * sampleSize;
 
-        updateReorderedFiles();
+            let whitePaperCount = 0;
+            let darkTextCount = 0;
+            let saturatedColorCount = 0;
+
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                const maxC = Math.max(r, g, b);
+                const minC = Math.min(r, g, b);
+                const saturation = maxC - minC;
+                const brightness = (r + g + b) / 3;
+
+                // Paper Background Check: Bright, low chromatic variance
+                if (brightness > 175 && saturation < 25) {
+                    whitePaperCount++;
+                }
+
+                // Dark Ink/Text Check: High contrast, dark pixels
+                if (brightness < 100 && saturation < 35) {
+                    darkTextCount++;
+                }
+
+                // Color Saliency: High saturation indicates natural scenery, sky, skin, foliage
+                if (saturation > 38) {
+                    saturatedColorCount++;
+                }
+            }
+
+            const whiteRatio = whitePaperCount / totalPixels;
+            const textRatio = darkTextCount / totalPixels;
+            const colorRatio = saturatedColorCount / totalPixels;
+
+            // Decision: High white background + low colors + clear text strokes
+            const isDoc = (whiteRatio > 0.45 && colorRatio < 0.18 && textRatio > 0.01) ||
+                          (whiteRatio > 0.60 && colorRatio < 0.25);
+
+            resolve(isDoc);
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            resolve(false);
+        };
+
+        img.src = objectUrl;
+    });
+}
+
+async function runAutoDocumentClassification(files) {
+    if (!docDetectBadge || files.length === 0) return;
+
+    docDetectBadge.style.display = 'inline-block';
+    docDetectBadge.className = 'detect-badge';
+    docDetectBadge.textContent = 'Scanning image type...';
+
+    // Sample up to first 3 images for instant sub-10ms response
+    const samplesToTest = files.slice(0, 3);
+    const results = await Promise.all(samplesToTest.map(analyzeIfDocument));
+    const documentCount = results.filter(Boolean).length;
+    const isDocumentCollection = (documentCount / results.length) >= 0.5;
+
+    if (isDocumentCollection) {
+        // Auto-switch to Enhanced Scan mode
+        scanFilterSelect.value = 'magic';
+        docDetectBadge.className = 'detect-badge doc-found';
+        docDetectBadge.textContent = '✓ Document detected (Auto-Scan enabled)';
+    } else {
+        // Leave at Original Colors
+        scanFilterSelect.value = 'original';
+        docDetectBadge.className = 'detect-badge photo-found';
+        docDetectBadge.textContent = '🖼️ Photo detected (Original colors)';
     }
 }
 
-function updateReorderedFiles() {
-    const imageGrid = document.getElementById("imageGrid");
-    const reorderedElements = Array.from(imageGrid.children);
+// =========================================================
+// 4. Images to PDF: Upload & Sortable Grid
+// =========================================================
+dropZone.addEventListener('click', () => fileInput.click());
+addMoreBtn.addEventListener('click', () => fileInput.click());
 
-    reorderedFiles = reorderedElements.map(imageItem => {
-        const index = parseInt(imageItem.getAttribute("data-index"), 10);
-        return selectedFiles[index];
+['dragenter', 'dragover'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = '#d946ef';
+        dropZone.style.background = 'rgba(217, 70, 239, 0.08)';
     });
+});
 
-    console.log("Reordered Files: ", reorderedFiles);
+['dragleave', 'drop'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'rgba(217, 70, 239, 0.24)';
+        dropZone.style.background = 'var(--card-bg)';
+    });
+});
+
+dropZone.addEventListener('drop', (e) => {
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleImageFiles(Array.from(e.dataTransfer.files));
+    }
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+        handleImageFiles(Array.from(e.target.files));
+    }
+});
+
+// ---------------------------------------------------------
+// HEIC / HEIF (Apple) support helpers
+// ---------------------------------------------------------
+const HEIC_REGEX = /\.(heic|heif)$/i;
+
+function isHeicFile(file) {
+    const t = (file.type || '').toLowerCase();
+    return t === 'image/heic' || t === 'image/heif' ||
+           t === 'image/heic-sequence' || t === 'image/heif-sequence' ||
+           HEIC_REGEX.test(file.name);
 }
 
-async function convertToPDF() {
-    if (reorderedFiles.length === 0) {
-        alert("Please select at least one image file.");
+// Can the browser itself decode this file? (Safari can decode HEIC natively)
+function canBrowserDecode(file) {
+    return createImageBitmap(file)
+        .then((bmp) => { bmp.close(); return true; })
+        .catch(() => false);
+}
+
+// Returns a JPEG File for HEIC/HEIF input, the same file for everything else,
+// or null if the file cannot be read at all.
+async function convertHeicIfNeeded(file) {
+    if (!isHeicFile(file)) return file;
+
+    if (window.heic2any) {
+        try {
+            const out = await window.heic2any({
+                blob: file,
+                toType: 'image/jpeg',
+                quality: 0.92
+            });
+            const blob = Array.isArray(out) ? out[0] : out; // multi-image HEIC -> first frame
+            const newName = file.name.replace(HEIC_REGEX, '') + '.jpg';
+            return new File([blob], newName, {
+                type: 'image/jpeg',
+                lastModified: file.lastModified
+            });
+        } catch (err) {
+            // e.g. file is named .heic but is really a JPEG/PNG, or conversion failed
+            console.warn('HEIC conversion failed, trying native decode:', file.name, err);
+        }
+    }
+
+    // Fallback: let the browser try (works in Safari and for mislabeled files)
+    if (await canBrowserDecode(file)) return file;
+    return null;
+}
+
+async function handleImageFiles(newFiles) {
+    const validImages = newFiles.filter(f =>
+        f.type.startsWith('image/') ||
+        f.name.match(/\.(jfif|webp|png|jpg|jpeg|avif|heic|heif)$/i)
+    );
+    if (validImages.length === 0) {
+        alert('Please select valid image files.');
         return;
     }
 
-    console.log("Converting the following images to PDF: ", reorderedFiles);
+    const heicCount = validImages.filter(isHeicFile).length;
+    const preparedImages = [];
+    const skippedNames = [];
 
-    const loadingOverlay = document.getElementById("loadingOverlay");
-    if (loadingOverlay) loadingOverlay.style.display = "flex";
-
-    const thankYouOverlay = document.getElementById("thankYouOverlay");
-    const downloadButton = document.getElementById("downloadButton");
-    const convertMoreButton = document.getElementById("convertMoreButton");
-
-    const pdfName = document.querySelector(".metadata-form .input[placeholder='Document name']").value || "Converted PDF";
-    const authorName = document.querySelector(".metadata-form .input[placeholder='Author name']").value || "";
-    const subject = document.querySelector(".metadata-form .input[placeholder='Subject']").value || "";
-    const keywords = document.querySelector(".metadata-form .input[placeholder='Keywords']").value || "";
-
-    const pdfDoc = await PDFDocument.create();
-
-    pdfDoc.setTitle(pdfName);
-    pdfDoc.setAuthor(authorName);
-    pdfDoc.setSubject(subject);
-    pdfDoc.setKeywords([keywords]);
-
-    for (const file of reorderedFiles) {
-        const fileData = await fileToBase64(file);
-
-        let img;
-        if (file.type === "image/png") {
-            img = await pdfDoc.embedPng(fileData);
-        } else if (file.type === "image/jpeg" || file.type === "image/jpg") {
-            img = await pdfDoc.embedJpg(fileData);
-        } else {
-            alert(`Unsupported image format: ${file.type}`);
-            continue;
-        }
-
-        const imgWidth = img.width;
-        const imgHeight = img.height;
-
-        const pageWidth = 595.28; // A4 page width in points
-        const scaledHeight = (pageWidth * imgHeight) / imgWidth;
-
-        const page = pdfDoc.addPage([pageWidth, scaledHeight]);
-        page.drawImage(img, {
-            x: 0,
-            y: 0,
-            width: pageWidth,
-            height: scaledHeight
-        });
+    if (heicCount > 0) {
+        loadingOverlay.classList.remove('hidden');
+        loadingTitle.textContent = 'Converting Apple Photos...';
     }
 
-    const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    try {
+        let heicDone = 0;
+        for (const f of validImages) {
+            if (isHeicFile(f)) {
+                heicDone++;
+                loadingText.textContent = `Converting HEIC/HEIF image ${heicDone} of ${heicCount}...`;
+            }
+            const ready = await convertHeicIfNeeded(f);
+            if (ready) preparedImages.push(ready);
+            else skippedNames.push(f.name);
+        }
+    } finally {
+        if (heicCount > 0) loadingOverlay.classList.add('hidden');
+    }
 
-    setTimeout(() => {
-        if (loadingOverlay) loadingOverlay.style.display = "none";
-        thankYouOverlay.style.display = "flex";
+    if (skippedNames.length > 0) {
+        alert('These files could not be read and were skipped:\n' + skippedNames.join('\n'));
+    }
+    if (preparedImages.length === 0) return;
 
-        downloadButton.addEventListener("click", () => {
-            const downloadLink = document.createElement("a");
-            downloadLink.href = URL.createObjectURL(blob);
-            downloadLink.download = `${pdfName}.pdf`;
-            downloadLink.click();
-        });
+    selectedImageFiles = [...selectedImageFiles, ...preparedImages];
+    renderImageGrid();
 
-        convertMoreButton.addEventListener("click", () => {
-            thankYouOverlay.style.display = "none";
-            window.location.reload();
-        });
-    }, 2000);
+    dropZone.style.display = 'none';
+    controlsCard.style.display = 'block';
+
+    // Trigger instant client-side document detection
+    runAutoDocumentClassification(selectedImageFiles);
 }
 
-function fileToBase64(file) {
+// ---------------------------------------------------------
+// Reorder grid: wrapping grid + drag handle + arrow buttons
+// (no horizontal scrolling, so scrolling never reorders images)
+// ---------------------------------------------------------
+let reorderSortable = null;
+const thumbUrlCache = new Map();
+
+function getThumbUrl(file) {
+    if (!thumbUrlCache.has(file)) {
+        thumbUrlCache.set(file, URL.createObjectURL(file));
+    }
+    return thumbUrlCache.get(file);
+}
+
+function moveImage(from, to) {
+    if (to < 0 || to >= selectedImageFiles.length || from === to) return;
+    const [moved] = selectedImageFiles.splice(from, 1);
+    selectedImageFiles.splice(to, 0, moved);
+    renderImageGrid();
+}
+
+function renderImageGrid() {
+    imageGrid.classList.add('reorder-grid');
+    imageGrid.innerHTML = '';
+    fileCountLabel.textContent = `${selectedImageFiles.length} image(s) selected`;
+
+    const total = selectedImageFiles.length;
+
+    selectedImageFiles.forEach((file, idx) => {
+        const item = document.createElement('div');
+        item.className = 'image-item reorder-item';
+        item.dataset.index = idx;
+
+        const img = document.createElement('img');
+        img.src = getThumbUrl(file);
+        img.alt = `Page ${idx + 1}`;
+        img.draggable = false;
+
+        const badge = document.createElement('span');
+        badge.className = 'page-badge';
+        badge.textContent = idx + 1;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.innerHTML = '×';
+        removeBtn.title = 'Remove image';
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const removed = selectedImageFiles.splice(idx, 1)[0];
+            const url = thumbUrlCache.get(removed);
+            if (url) {
+                URL.revokeObjectURL(url);
+                thumbUrlCache.delete(removed);
+            }
+            if (selectedImageFiles.length === 0) {
+                resetImagesState();
+            } else {
+                renderImageGrid();
+                runAutoDocumentClassification(selectedImageFiles);
+            }
+        });
+
+        // Bottom control bar:  [ ◀ ]  [ ⠿ drag ]  [ ▶ ]
+        const controls = document.createElement('div');
+        controls.className = 'reorder-controls';
+
+        const prevBtn = document.createElement('button');
+        prevBtn.type = 'button';
+        prevBtn.className = 'move-btn';
+        prevBtn.innerHTML = '◀';
+        prevBtn.title = 'Move earlier';
+        prevBtn.disabled = idx === 0;
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moveImage(idx, idx - 1);
+        });
+
+        const handle = document.createElement('span');
+        handle.className = 'drag-handle';
+        handle.title = 'Hold and drag to reorder';
+        handle.innerHTML = '⠿';
+
+        const nextBtn = document.createElement('button');
+        nextBtn.type = 'button';
+        nextBtn.className = 'move-btn';
+        nextBtn.innerHTML = '▶';
+        nextBtn.title = 'Move later';
+        nextBtn.disabled = idx === total - 1;
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moveImage(idx, idx + 1);
+        });
+
+        controls.appendChild(prevBtn);
+        controls.appendChild(handle);
+        controls.appendChild(nextBtn);
+
+        item.appendChild(img);
+        item.appendChild(badge);
+        item.appendChild(removeBtn);
+        item.appendChild(controls);
+        imageGrid.appendChild(item);
+    });
+
+    // Create Sortable only ONCE (old code created a new one on every render).
+    // Dragging is allowed ONLY from the handle, so scrolling/tapping elsewhere never reorders.
+    if (!reorderSortable) {
+        reorderSortable = new Sortable(imageGrid, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            fallbackTolerance: 3,
+            onEnd() {
+                const reorderedIndices = Array.from(imageGrid.children).map(child => parseInt(child.dataset.index, 10));
+                selectedImageFiles = reorderedIndices.map(i => selectedImageFiles[i]);
+                renderImageGrid();
+            }
+        });
+    }
+}
+
+function resetImagesState() {
+    selectedImageFiles = [];
+    fileInput.value = '';
+    imageGrid.innerHTML = '';
+    controlsCard.style.display = 'none';
+    dropZone.style.display = 'block';
+    if (docDetectBadge) {
+        docDetectBadge.style.display = 'none';
+    }
+}
+
+resetImagesBtn.addEventListener('click', resetImagesState);
+
+// =========================================================
+// 5. Bulletproof Image Processor & Scan Filter (Fixes SOI Error)
+//    + White background for transparency (no more black)
+//    + Safe canvas size for very large images (no more blank canvas)
+// =========================================================
+
+// Safe limits: Safari/iOS allows about 16.7 million pixels per canvas.
+const MAX_CANVAS_PIXELS = 16000000;
+const MAX_CANVAS_SIDE = 16000;
+
+function processImageToCleanBuffer(file, filterMode) {
     return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = () => reject(new Error("Failed to convert file to Base64"));
-        reader.readAsDataURL(file);
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+
+            try {
+                const srcW = img.naturalWidth || img.width;
+                const srcH = img.naturalHeight || img.height;
+
+                const isPng = file.type === 'image/png';
+                // Only an untouched PNG keeps its transparency.
+                // Everything else (WEBP, AVIF, GIF, filtered images) gets a white background.
+                const keepAlpha = isPng && filterMode === 'original';
+
+                // Shrink huge images so the canvas never exceeds browser limits
+                let scale = Math.min(
+                    1,
+                    Math.sqrt(MAX_CANVAS_PIXELS / (srcW * srcH)),
+                    MAX_CANVAS_SIDE / Math.max(srcW, srcH)
+                );
+
+                let canvas = null;
+                let ctx = null;
+
+                // Try the size; if the browser silently gives a dead (blank) canvas, shrink and retry.
+                for (let attempt = 0; attempt < 6; attempt++) {
+                    const w = Math.max(1, Math.floor(srcW * scale));
+                    const h = Math.max(1, Math.floor(srcH * scale));
+
+                    const c = document.createElement('canvas');
+                    c.width = w;
+                    c.height = h;
+                    const x = c.getContext('2d', { willReadFrequently: filterMode !== 'original' });
+
+                    if (x) {
+                        // A working canvas can be painted white and read back as opaque.
+                        // A failed/over-limit canvas reads back as transparent black.
+                        x.fillStyle = '#ffffff';
+                        x.fillRect(0, 0, w, h);
+                        const probe = x.getImageData(w - 1, h - 1, 1, 1).data;
+                        if (probe[3] === 255) {
+                            canvas = c;
+                            ctx = x;
+                            break;
+                        }
+                    }
+
+                    c.width = 0;
+                    c.height = 0;
+                    scale *= 0.7;
+                }
+
+                if (!canvas) {
+                    throw new Error(`Image is too large for this browser: ${file.name}`);
+                }
+
+                // Canvas is already white-filled (so JPEG output has no black background).
+                // For an untouched PNG, clear it so real transparency is preserved.
+                if (keepAlpha) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                if (filterMode === 'magic' || filterMode === 'bw') {
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+
+                    if (filterMode === 'magic') {
+                        for (let i = 0; i < data.length; i += 4) {
+                            let r = data[i], g = data[i + 1], b = data[i + 2];
+                            data[i] = Math.min(255, Math.max(0, (r - 128) * 1.35 + 145));
+                            data[i + 1] = Math.min(255, Math.max(0, (g - 128) * 1.35 + 145));
+                            data[i + 2] = Math.min(255, Math.max(0, (data[i + 2] - 128) * 1.35 + 145));
+                        }
+                    } else if (filterMode === 'bw') {
+                        for (let i = 0; i < data.length; i += 4) {
+                            const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+                            const val = gray > 140 ? 255 : (gray < 80 ? 0 : (gray - 80) * 4.25);
+                            data[i] = val;
+                            data[i + 1] = val;
+                            data[i + 2] = val;
+                        }
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                }
+
+                const mime = isPng ? 'image/png' : 'image/jpeg';
+                const outW = canvas.width;
+                const outH = canvas.height;
+
+                canvas.toBlob((blob) => {
+                    // free the canvas memory right away
+                    canvas.width = 0;
+                    canvas.height = 0;
+
+                    if (!blob) {
+                        reject(new Error("Canvas conversion failed"));
+                        return;
+                    }
+                    blob.arrayBuffer().then((buffer) => {
+                        resolve({
+                            buffer,
+                            isPng,
+                            width: outW,
+                            height: outH
+                        });
+                    }).catch(reject);
+                }, mime, 0.95);
+
+            } catch (err) {
+                reject(err);
+            }
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error(`Failed to load image: ${file.name}`));
+        };
+
+        img.src = objectUrl;
     });
 }
 
-const thankYouSlide = document.getElementById('thankYouOverlay');
-const convertMoreButton = document.getElementById('convertMoreButton');
+// =========================================================
+// 6. Convert Images to PDF (With Default A4 Width Fit)
+// =========================================================
+convertButton.addEventListener('click', async () => {
+    if (selectedImageFiles.length === 0) {
+        alert('Please upload at least one image.');
+        return;
+    }
 
-thankYouSlide.addEventListener('click', () => {
-    convertMoreButton.click();
-})
-const hamburgerMenu = document.querySelector('.hamburger-menu');
-const dropdownMenu = document.querySelector('.dropdown-menu');
+    loadingOverlay.classList.remove('hidden');
+    loadingTitle.textContent = 'Compiling PDF Document...';
+    loadingText.textContent = 'Processing document scan filters & page layouts...';
 
-hamburgerMenu.addEventListener('click', () => {
-    dropdownMenu.classList.toggle('show');
+    const layout = pageLayoutSelect.value;
+    const filter = scanFilterSelect.value;
+
+    const docName = docNameInput.value.trim() || 'PixelMorph-Document';
+    const author = authorNameInput.value.trim() || 'Pixel Morph';
+    const subject = subjectInput.value.trim() || '';
+    const keywords = keywordsInput.value.trim() || '';
+
+    try {
+        const pdfDoc = await PDFDocument.create();
+        pdfDoc.setTitle(docName);
+        pdfDoc.setAuthor(author);
+        pdfDoc.setSubject(subject);
+        pdfDoc.setKeywords(keywords.split(',').map(k => k.trim()));
+
+        for (let i = 0; i < selectedImageFiles.length; i++) {
+            loadingText.textContent = `Rendering page ${i + 1} of ${selectedImageFiles.length}...`;
+
+            const { buffer, isPng, width: imgW, height: imgH } = await processImageToCleanBuffer(selectedImageFiles[i], filter);
+
+            let embeddedImg;
+            if (isPng) {
+                embeddedImg = await pdfDoc.embedPng(buffer);
+            } else {
+                embeddedImg = await pdfDoc.embedJpg(buffer);
+            }
+
+            // 1. DEFAULT: Standard A4 Width with Proportional Height (Zero Side Margins)
+            if (layout === 'a4-fit') {
+                const pageW = 595.28;
+                const pageH = (pageW * imgH) / imgW;
+                const page = pdfDoc.addPage([pageW, pageH]);
+                page.drawImage(embeddedImg, {
+                    x: 0,
+                    y: 0,
+                    width: pageW,
+                    height: pageH
+                });
+
+            // 2. Raw Original Image Dimensions
+            } else if (layout === 'fit') {
+                const page = pdfDoc.addPage([imgW, imgH]);
+                page.drawImage(embeddedImg, { 
+                    x: 0, 
+                    y: 0, 
+                    width: imgW, 
+                    height: imgH 
+                });
+
+            // 3. Fixed A4 Portrait with Centering
+            } else if (layout === 'portrait') {
+                const pageW = 595.28;
+                const pageH = 841.89;
+                const page = pdfDoc.addPage([pageW, pageH]);
+                const scale = Math.min(pageW / imgW, pageH / imgH);
+                const drawW = imgW * scale;
+                const drawH = imgH * scale;
+                page.drawImage(embeddedImg, {
+                    x: (pageW - drawW) / 2,
+                    y: (pageH - drawH) / 2,
+                    width: drawW,
+                    height: drawH
+                });
+
+            // 4. Fixed A4 Landscape with Centering
+            } else if (layout === 'landscape') {
+                const pageW = 841.89;
+                const pageH = 595.28;
+                const page = pdfDoc.addPage([pageW, pageH]);
+                const scale = Math.min(pageW / imgW, pageH / imgH);
+                const drawW = imgW * scale;
+                const drawH = imgH * scale;
+                page.drawImage(embeddedImg, {
+                    x: (pageW - drawW) / 2,
+                    y: (pageH - drawH) / 2,
+                    width: drawW,
+                    height: drawH
+                });
+            }
+        }
+
+        const pdfBytes = await pdfDoc.save();
+        const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+
+        loadingOverlay.classList.add('hidden');
+        thankYouOverlay.classList.remove('hidden');
+
+        downloadButton.onclick = () => {
+            const a = document.createElement('a');
+            a.href = pdfUrl;
+            a.download = `${docName}.pdf`;
+            a.click();
+        };
+
+        convertMoreButton.onclick = () => {
+            thankYouOverlay.classList.add('hidden');
+            resetImagesState();
+        };
+
+    } catch (err) {
+        loadingOverlay.classList.add('hidden');
+        alert('PDF Generation failed: ' + err.message);
+    }
 });
 
-createEmptyBoxes();
+// =========================================================
+// 7. PDF to Images (Vice Versa Extraction + ZIP)
+// =========================================================
+pdfDropZone.addEventListener('click', () => pdfFileInput.click());
+
+pdfFileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files[0]) {
+        processPdfFile(e.target.files[0]);
+    }
+});
+
+async function processPdfFile(file) {
+    if (file.type !== 'application/pdf') {
+        alert('Please select a valid PDF file.');
+        return;
+    }
+
+    loadingOverlay.classList.remove('hidden');
+    loadingTitle.textContent = 'Extracting PDF Pages...';
+    loadingText.textContent = 'Rendering pages to high-res raster images...';
+
+    pdfFileNameLabel.textContent = file.name;
+    extractedPdfPages = [];
+    pdfPagesGrid.innerHTML = '';
+
+    try {
+        const fileData = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: fileData }).promise;
+        const totalPages = pdf.numPages;
+        pdfPageCountLabel.textContent = `${totalPages} page(s) extracted`;
+
+        for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+            loadingText.textContent = `Extracting Page ${pageNum} of ${totalPages}...`;
+            const page = await pdf.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 2.0 });
+
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const ctx = canvas.getContext('2d');
+
+            await page.render({ canvasContext: ctx, viewport }).promise;
+
+            const dataUrl = canvas.toDataURL('image/png');
+            extractedPdfPages.push({ pageNum, canvas, dataUrl });
+
+            const item = document.createElement('div');
+            item.className = 'image-item';
+            const img = document.createElement('img');
+            img.src = dataUrl;
+            item.appendChild(img);
+            pdfPagesGrid.appendChild(item);
+        }
+
+        loadingOverlay.classList.add('hidden');
+        pdfDropZone.style.display = 'none';
+        pdfExtractCard.style.display = 'block';
+
+    } catch (err) {
+        loadingOverlay.classList.add('hidden');
+        alert('Failed to read PDF: ' + err.message);
+    }
+}
+
+downloadAllImagesBtn.addEventListener('click', async () => {
+    if (extractedPdfPages.length === 0) return;
+
+    loadingOverlay.classList.remove('hidden');
+    loadingTitle.textContent = 'Creating ZIP Archive...';
+    loadingText.textContent = 'Packaging all pages into a zip file...';
+
+    const zip = new JSZip();
+    const format = pdfExportFormat.value;
+    const baseName = pdfFileNameLabel.textContent.replace('.pdf', '');
+
+    for (const item of extractedPdfPages) {
+        const mime = format === 'jpeg' ? 'image/jpeg' : 'image/png';
+        const ext = format === 'jpeg' ? 'jpg' : 'png';
+        const imgData = item.canvas.toDataURL(mime, 0.95).split(',')[1];
+        zip.file(`${baseName}-page-${item.pageNum}.${ext}`, imgData, { base64: true });
+    }
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const zipUrl = URL.createObjectURL(zipBlob);
+
+    loadingOverlay.classList.add('hidden');
+    const a = document.createElement('a');
+    a.href = zipUrl;
+    a.download = `${baseName}-images.zip`;
+    a.click();
+});
+
+resetPdfBtn.addEventListener('click', () => {
+    pdfFileInput.value = '';
+    extractedPdfPages = [];
+    pdfPagesGrid.innerHTML = '';
+    pdfExtractCard.style.display = 'none';
+    pdfDropZone.style.display = 'block';
+});
+
+
+
+
+
+
+
+
+
+
+// =========================================================
+// 8. Themed Custom Dropdowns (wraps native <select>s)
+// =========================================================
+function enhanceSelect(select) {
+    const wrap = select.closest('.select-container') || select.parentElement;
+    wrap.classList.add('custom-select');
+    select.classList.add('native-select-hidden');
+    select.tabIndex = -1;
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'custom-select-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+
+    const label = document.createElement('span');
+    label.className = 'custom-select-label';
+
+    trigger.appendChild(label);
+    trigger.insertAdjacentHTML('beforeend',
+        '<svg class="custom-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' +
+        '<polyline points="6 9 12 15 18 9"></polyline></svg>');
+
+    const menu = document.createElement('ul');
+    menu.className = 'custom-select-menu';
+    menu.setAttribute('role', 'listbox');
+
+    const items = Array.from(select.options).map((opt) => {
+        const li = document.createElement('li');
+        li.className = 'custom-select-option';
+        li.setAttribute('role', 'option');
+        li.dataset.value = opt.value;
+        li.textContent = opt.textContent;
+        li.addEventListener('click', () => {
+            select.value = opt.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            close();
+            trigger.focus();
+        });
+        menu.appendChild(li);
+        return li;
+    });
+
+    wrap.appendChild(trigger);
+    wrap.appendChild(menu);
+
+    let activeIdx = -1;
+
+    function sync() {
+        const current = select.options[select.selectedIndex];
+        label.textContent = current ? current.textContent : '';
+        items.forEach((li) => {
+            const on = li.dataset.value === select.value;
+            li.classList.toggle('selected', on);
+            li.setAttribute('aria-selected', on);
+        });
+    }
+
+    function setActive(i) {
+        activeIdx = (i + items.length) % items.length;
+        items.forEach((li, n) => li.classList.toggle('active', n === activeIdx));
+        items[activeIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    function open() {
+        document.querySelectorAll('.custom-select.open').forEach((el) => {
+            if (el !== wrap) el.classList.remove('open');
+        });
+        wrap.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+        setActive(select.selectedIndex);
+    }
+
+    function close() {
+        wrap.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+        items.forEach((li) => li.classList.remove('active'));
+    }
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        wrap.classList.contains('open') ? close() : open();
+    });
+
+    trigger.addEventListener('keydown', (e) => {
+        const isOpen = wrap.classList.contains('open');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!isOpen) open();
+            else setActive(activeIdx + (e.key === 'ArrowDown' ? 1 : -1));
+        } else if ((e.key === 'Enter' || e.key === ' ') && isOpen) {
+            e.preventDefault();
+            items[activeIdx].click();
+        } else if (e.key === 'Escape') {
+            close();
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) close();
+    });
+
+    // Keep the UI in sync when code sets select.value (e.g. auto document detection)
+    const nativeValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+    Object.defineProperty(select, 'value', {
+        configurable: true,
+        get() { return nativeValue.get.call(this); },
+        set(v) { nativeValue.set.call(this, v); sync(); }
+    });
+
+    sync();
+}
+
+document.querySelectorAll('.select-container select').forEach(enhanceSelect);
