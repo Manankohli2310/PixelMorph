@@ -406,8 +406,8 @@ body {
 }
 
 .upload-icon-wrapper {
-    width: 68px;
-    height: 68px;
+    width: 88px;
+    height: 88px;
     background: rgba(6, 182, 212, 0.12);
     color: var(--cyan-light);
     border: 1px solid rgba(20, 184, 166, 0.3);
@@ -974,16 +974,17 @@ body {
 }
 
 /* =========================================================
-   Mobile Responsiveness (Down to 350px)
+   Mobile Responsiveness - shared with pdf.css
+   (same values as PDF Studio for every shared element)
    ========================================================= */
 @media (max-width: 640px) {
     .main-wrapper {
-        padding: 30px 14px 60px 14px;
+        padding: 50px 14px 60px 14px;
     }
 
     .selected-file-info {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
     }
 
     .settings-grid {
@@ -1008,14 +1009,16 @@ body {
     }
 }
 
-
+/* Same breakpoint PDF Studio uses for the tabs */
+@media (max-width: 400px) {
+    .mode-tab {
+        padding: 9px 12px;
+    }
+}
 
 /* =========================================================
-   ADD THIS BLOCK TO THE END OF cnr.css
-   Responsive fixes for Resizer / Cropper / Compressor
+   Overflow safeguards (flex/grid items must be allowed to shrink)
    ========================================================= */
-
-/* ---------- Overflow safeguards (flex/grid items must be allowed to shrink) ---------- */
 .controls-card,
 .workspace-container,
 .tool-subpanel,
@@ -1059,41 +1062,13 @@ body {
     .workspace-container .cropper-point.point-sw { left: -7px;   bottom: -7px; }
 }
 
-/* ---------- Phones ---------- */
+/* =========================================================
+   Phones: Resizer / Cropper / Compressor-only tweaks
+   (no PDF Studio counterpart). Everything shared follows pdf.css above.
+   ========================================================= */
 @media (max-width: 640px) {
-    .navbar { padding: 12px 14px; }
-    .brand-logo { font-size: 20px; }
-    .pill-tag { font-size: 10px; padding: 4px 10px; letter-spacing: 0.8px; margin-bottom: 12px; }
-    .main-subtitle { margin-bottom: 20px; }
-
-    /* Mode tabs: full width, equal halves */
-    .mode-tabs-wrapper { margin-bottom: 18px; }
-    .mode-tabs { display: flex; width: 100%; }
-    .mode-tab {
-        flex: 1;
-        justify-content: center;
-        padding: 10px 8px;
-        font-size: 13px;
-        gap: 6px;
-        white-space: nowrap;
-    }
-
-    /* Upload zone */
-    .upload-zone { padding: 34px 16px; border-radius: 14px; }
-    .upload-icon-wrapper { width: 56px; height: 56px; margin-bottom: 14px; }
-    .upload-icon-wrapper svg { width: 30px; height: 30px; }
-    .upload-text { font-size: 16px; }
-    .upload-subtext { font-size: 13px; margin-bottom: 12px; }
-    .upload-meta { font-size: 11px; gap: 4px 10px; }
-    .upload-meta span:nth-child(even) { display: none; }   /* hide "•" separators */
-
-    /* Card + file info */
-    .controls-card { padding: 14px; border-radius: 14px; }
-    .selected-file-info { align-items: stretch; gap: 8px; padding-bottom: 12px; margin-bottom: 14px; }
-    .file-name-wrap { width: 100%; }
-    .file-name { font-size: 14px; }
     .file-meta-badges { flex-wrap: wrap; gap: 6px; }
-    .file-dims, .file-size-badge { font-size: 11px; padding: 3px 8px; }
+    .file-name-wrap { width: 100%; }
 
     /* Workspace: stable height, scales with small screens (svh = no jump when the browser bar hides) */
     .workspace-container {
@@ -1107,11 +1082,6 @@ body {
     /* Resize / Crop toggle */
     .sub-toggle-wrapper { gap: 8px; padding-bottom: 12px; margin-bottom: 14px; }
     .sub-toggle-btn { flex: 1; padding: 10px 8px; font-size: 12.5px; }
-
-    /* Resize inputs: Width + Height side by side, aspect lock full width */
-    #subpanelResize .settings-grid { grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-    #subpanelResize .settings-grid .setting-item:last-child { grid-column: 1 / -1; }
-    #panelCompress .settings-grid { grid-template-columns: 1fr; gap: 14px; margin-bottom: 16px; }
 
     /* 16px stops iOS Safari from zooming the page when an input is focused */
     .styled-input,
@@ -1134,30 +1104,11 @@ body {
     .stat-card { padding: 10px; }
     .stat-label { font-size: 10px; letter-spacing: 0.3px; }
     .stat-value { font-size: 13px; overflow-wrap: anywhere; }
-
-    /* Footer buttons on one row */
-    .controls-footer { flex-direction: row; gap: 10px; padding-top: 14px; }
-    .controls-footer .action-btn { width: auto; padding: 12px 16px; }
-    .controls-footer .primary-btn { flex: 1; }
-
-    /* Modals / footer */
-    .thank-you-content { padding: 26px 18px; width: calc(100% - 32px); }
-    .modal-actions { gap: 10px; }
-    .loader-text { font-size: 12px; }
-    .footer { margin-top: 40px; padding: 20px 12px; font-size: 12px; }
 }
 
 /* ---------- Very small phones (380px and below) ---------- */
 @media (max-width: 380px) {
-    .main-wrapper { padding: 24px 10px 50px; }
-    .controls-card { padding: 10px; }
-    .mode-tab { font-size: 12px; padding: 10px 6px; }
-
     .compress-stats-panel { grid-template-columns: 1fr 1fr; }
     .compress-stats-panel .stat-card:last-child { grid-column: 1 / -1; }
     .crop-presets-wrapper .preset-buttons { grid-template-columns: repeat(2, 1fr); }
-
-    /* Stack the footer buttons, main action first */
-    .controls-footer { flex-direction: column-reverse; }
-    .controls-footer .action-btn { width: 100%; }
 }

@@ -360,8 +360,8 @@ body {
 }
 
 .upload-icon-wrapper {
-    width: 68px;
-    height: 68px;
+    width: 88px;
+    height: 88px;
     background: rgba(16, 185, 129, 0.12);
     color: var(--emerald-light);
     border: 1px solid rgba(52, 211, 153, 0.3);
@@ -841,11 +841,12 @@ body {
 }
 
 /* =========================================================
-   Mobile Responsiveness (Down to 350px)
+   Mobile Responsiveness - shared with pdf.css
+   (same values as PDF Studio for every shared element)
    ========================================================= */
 @media (max-width: 640px) {
     .main-wrapper {
-        padding: 30px 14px 60px 14px;
+        padding: 50px 14px 60px 14px;
     }
 
     .selected-file-info {
@@ -860,15 +861,6 @@ body {
 
     .batch-settings-bar {
         grid-template-columns: 1fr;
-    }
-
-    .queue-item {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .queue-controls {
-        justify-content: space-between;
     }
 
     .controls-footer {
@@ -890,10 +882,8 @@ body {
 }
 
 /* =========================================================
-   ADD THIS BLOCK TO THE END OF file.css
+   Progress bar + cancel
    ========================================================= */
-
-/* Progress bar + cancel */
 .progress-track {
     width: min(320px, 80vw);
     height: 6px;
@@ -989,10 +979,8 @@ select option:disabled { color: #64748b; }
 }
 
 /* =========================================================
-   ADD THIS BLOCK TO THE END OF file.css (after file-additions.css)
+   Queue: scrolls inside its own box
    ========================================================= */
-
-/* ---------- 1. Queue: scrolls inside its own box ---------- */
 /* Change --queue-visible-rows to show more or fewer files before scrolling */
 .queue-list {
     --queue-row-h: 88px;
@@ -1016,7 +1004,9 @@ select option:disabled { color: #64748b; }
     .queue-item { min-height: 0; }
 }
 
-/* ---------- 2. Themed dropdowns ---------- */
+/* =========================================================
+   Themed dropdowns
+   ========================================================= */
 .cs { position: relative; width: 100%; }
 .cs-compact { width: auto; min-width: 88px; }
 .cs-native { display: none !important; }
@@ -1130,15 +1120,9 @@ select option:disabled { color: #64748b; }
 
 .cs-option.is-disabled.is-active { background: transparent; }
 
-
-
-
 /* =========================================================
-   ADD THIS BLOCK TO THE END OF file.css (after file-additions-2.css)
-   Mobile / small-screen fixes
+   Overflow fixes (cause of breakage under ~435px)
    ========================================================= */
-
-/* ---------- Overflow fixes (the cause of breakage under ~435px) ---------- */
 /* Flex/grid children refuse to shrink below their content unless min-width: 0 */
 .controls-card,
 .queue-wrapper,
@@ -1153,33 +1137,12 @@ select option:disabled { color: #64748b; }
 .thank-you-message { overflow-wrap: anywhere; }
 img { max-width: 100%; }
 
-/* ---------- Phones: compact layout ---------- */
+/* =========================================================
+   Phones: compact queue rows (File Converter only - no PDF Studio
+   counterpart). Everything else follows pdf.css above.
+   Row layout: [thumb] name + size ........ [FORMAT v] [x]
+   ========================================================= */
 @media (max-width: 640px) {
-    .navbar { padding: 12px 14px; }
-    .brand-logo { font-size: 20px; }
-
-    .pill-tag { font-size: 10px; padding: 4px 10px; letter-spacing: 0.8px; margin-bottom: 12px; }
-    .main-subtitle { margin-bottom: 20px; }
-
-    /* Upload zone */
-    .upload-zone { padding: 34px 16px; border-radius: 14px; }
-    .upload-icon-wrapper { width: 56px; height: 56px; margin-bottom: 14px; }
-    .upload-icon-wrapper svg { width: 30px; height: 30px; }
-    .upload-text { font-size: 16px; }
-    .upload-subtext { font-size: 13px; margin-bottom: 12px; }
-    .upload-meta { font-size: 11px; gap: 4px 10px; }
-    .upload-meta span:nth-child(even) { display: none; }   /* hide the "•" separators */
-
-    /* Card + header row */
-    .controls-card { padding: 14px; border-radius: 14px; }
-    .selected-file-info { flex-direction: row; align-items: center; padding-bottom: 12px; margin-bottom: 14px; }
-    .add-more-btn { width: auto; flex-shrink: 0; padding: 6px 12px; }
-    .file-name { font-size: 14px; }
-
-    .batch-settings-bar { padding: 12px; gap: 12px; margin-bottom: 16px; }
-    .section-micro-label { font-size: 10.5px; margin-bottom: 8px; }
-
-    /* ---- Minimal queue row: [thumb] name + size ........ [FORMAT v] [x] ---- */
     .queue-list { gap: 8px; padding-right: 2px; }
     .queue-item {
         flex-direction: row;
@@ -1200,33 +1163,12 @@ img { max-width: 100%; }
     .cs-compact { min-width: 74px; }
     .cs-compact .cs-trigger { padding: 6px 8px; }
     .queue-remove-btn { width: 28px; height: 28px; }
-
-    /* Footer buttons on one row */
-    .controls-footer { flex-direction: row; gap: 10px; padding-top: 14px; }
-    .controls-footer .action-btn { width: auto; padding: 11px 16px; }
-    .controls-footer .primary-btn { flex: 1; }
-
-    /* Modals */
-    .thank-you-message { padding: 26px 18px; width: calc(100% - 32px); }
-    .modal-actions { gap: 10px; }
-    .result-notes { font-size: 11.5px; }
-    .loader-text { font-size: 12px; }
-
-    .footer { margin-top: 40px; padding: 20px 12px; font-size: 12px; }
 }
 
-/* ---------- Very small phones (360px and below) ---------- */
+/* ---------- Very small phones (380px and below) ---------- */
 @media (max-width: 380px) {
-    .main-wrapper { padding: 24px 10px 50px; }
-    .controls-card { padding: 10px; }
-    .batch-settings-bar { padding: 10px; }
     .queue-thumb { width: 34px; height: 34px; }
     .queue-thumb-wrap { gap: 8px; }
     .cs-trigger { padding: 9px 10px; font-size: 12.5px; }
     .cs-compact { min-width: 66px; }
-    .file-name { font-size: 13px; }
-
-    /* Stack the footer buttons, Convert first */
-    .controls-footer { flex-direction: column-reverse; }
-    .controls-footer .action-btn { width: 100%; }
 }
