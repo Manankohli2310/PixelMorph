@@ -8,6 +8,25 @@
     box-sizing: border-box;
     -webkit-tap-highlight-color: transparent !important;
     outline: none !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    font-family: sans-serif;
+    -webkit-focus-ring-color: rgba(255, 255, 255, 0) !important;
+}
+body::-webkit-scrollbar {
+    width: 8px;               
+  }
+  
+body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0);        
+  }
+  
+ body::-webkit-scrollbar-thumb {
+    padding: 2px;
+    background-color: rgba(65, 64, 64, 0.301);   
+    border-radius: 20px;       
 }
 
 :root {
@@ -987,4 +1006,158 @@ body {
     .modal-actions .action-btn {
         width: 100%;
     }
+}
+
+
+
+/* =========================================================
+   ADD THIS BLOCK TO THE END OF cnr.css
+   Responsive fixes for Resizer / Cropper / Compressor
+   ========================================================= */
+
+/* ---------- Overflow safeguards (flex/grid items must be allowed to shrink) ---------- */
+.controls-card,
+.workspace-container,
+.tool-subpanel,
+.setting-item,
+.settings-grid > *,
+.select-container,
+.input-with-unit,
+.selected-file-info > * { min-width: 0; max-width: 100%; }
+
+.styled-input,
+.select-container select { width: 100%; min-width: 0; }
+
+.thank-you-content { overflow-wrap: anywhere; }
+.loading-overlay { padding: 0 20px; text-align: center; }
+
+/* ---------- Cropper theme (these were being overridden) ----------
+   1) cropper.min.css loads after cnr.css, so its blue rules won.
+   2) The global "* { outline: none !important }" removed the crop-box border.
+   Prefixing with .workspace-container + !important fixes both. */
+.workspace-container .cropper-view-box {
+    outline: 2px solid rgba(6, 182, 212, 0.9) !important;
+}
+.workspace-container .cropper-line,
+.workspace-container .cropper-point {
+    background-color: var(--cyan-light);
+}
+
+/* Bigger drag handles on touch screens (default 5px is almost impossible to grab) */
+@media (pointer: coarse) {
+    .workspace-container .cropper-point:not(.point-se) {
+        width: 14px;
+        height: 14px;
+        opacity: 0.95;
+    }
+    .workspace-container .cropper-point.point-e  { right: -7px;  margin-top: -7px; }
+    .workspace-container .cropper-point.point-w  { left: -7px;   margin-top: -7px; }
+    .workspace-container .cropper-point.point-n  { top: -7px;    margin-left: -7px; }
+    .workspace-container .cropper-point.point-s  { bottom: -7px; margin-left: -7px; }
+    .workspace-container .cropper-point.point-ne { right: -7px;  top: -7px; }
+    .workspace-container .cropper-point.point-nw { left: -7px;   top: -7px; }
+    .workspace-container .cropper-point.point-sw { left: -7px;   bottom: -7px; }
+}
+
+/* ---------- Phones ---------- */
+@media (max-width: 640px) {
+    .navbar { padding: 12px 14px; }
+    .brand-logo { font-size: 20px; }
+    .pill-tag { font-size: 10px; padding: 4px 10px; letter-spacing: 0.8px; margin-bottom: 12px; }
+    .main-subtitle { margin-bottom: 20px; }
+
+    /* Mode tabs: full width, equal halves */
+    .mode-tabs-wrapper { margin-bottom: 18px; }
+    .mode-tabs { display: flex; width: 100%; }
+    .mode-tab {
+        flex: 1;
+        justify-content: center;
+        padding: 10px 8px;
+        font-size: 13px;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    /* Upload zone */
+    .upload-zone { padding: 34px 16px; border-radius: 14px; }
+    .upload-icon-wrapper { width: 56px; height: 56px; margin-bottom: 14px; }
+    .upload-icon-wrapper svg { width: 30px; height: 30px; }
+    .upload-text { font-size: 16px; }
+    .upload-subtext { font-size: 13px; margin-bottom: 12px; }
+    .upload-meta { font-size: 11px; gap: 4px 10px; }
+    .upload-meta span:nth-child(even) { display: none; }   /* hide "•" separators */
+
+    /* Card + file info */
+    .controls-card { padding: 14px; border-radius: 14px; }
+    .selected-file-info { align-items: stretch; gap: 8px; padding-bottom: 12px; margin-bottom: 14px; }
+    .file-name-wrap { width: 100%; }
+    .file-name { font-size: 14px; }
+    .file-meta-badges { flex-wrap: wrap; gap: 6px; }
+    .file-dims, .file-size-badge { font-size: 11px; padding: 3px 8px; }
+
+    /* Workspace: stable height, scales with small screens (svh = no jump when the browser bar hides) */
+    .workspace-container {
+        height: 300px;
+        height: clamp(220px, 50svh, 320px);
+        margin-bottom: 16px;
+        border-radius: 10px;
+    }
+    .workspace-container canvas { max-height: 100%; }
+
+    /* Resize / Crop toggle */
+    .sub-toggle-wrapper { gap: 8px; padding-bottom: 12px; margin-bottom: 14px; }
+    .sub-toggle-btn { flex: 1; padding: 10px 8px; font-size: 12.5px; }
+
+    /* Resize inputs: Width + Height side by side, aspect lock full width */
+    #subpanelResize .settings-grid { grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    #subpanelResize .settings-grid .setting-item:last-child { grid-column: 1 / -1; }
+    #panelCompress .settings-grid { grid-template-columns: 1fr; gap: 14px; margin-bottom: 16px; }
+
+    /* 16px stops iOS Safari from zooming the page when an input is focused */
+    .styled-input,
+    .select-container select { font-size: 16px; padding: 11px 12px; }
+    .aspect-lock-btn { width: 100%; padding: 11px 12px; }
+
+    /* Presets */
+    .preset-scale-row,
+    .crop-presets-wrapper { flex-direction: column; align-items: stretch; gap: 8px; margin-bottom: 14px; }
+    .preset-scale-row .preset-buttons { display: grid; grid-template-columns: repeat(4, 1fr); }
+    .crop-presets-wrapper .preset-buttons { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .preset-btn { padding: 9px 6px; font-size: 12px; min-height: 38px; }
+
+    /* Rotate / flip / reset: 2 x 2 grid */
+    .crop-actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .icon-tool-btn { padding: 10px 8px; min-height: 40px; }
+
+    /* Compressor stats: three compact cards in a row */
+    .compress-stats-panel { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .stat-card { padding: 10px; }
+    .stat-label { font-size: 10px; letter-spacing: 0.3px; }
+    .stat-value { font-size: 13px; overflow-wrap: anywhere; }
+
+    /* Footer buttons on one row */
+    .controls-footer { flex-direction: row; gap: 10px; padding-top: 14px; }
+    .controls-footer .action-btn { width: auto; padding: 12px 16px; }
+    .controls-footer .primary-btn { flex: 1; }
+
+    /* Modals / footer */
+    .thank-you-content { padding: 26px 18px; width: calc(100% - 32px); }
+    .modal-actions { gap: 10px; }
+    .loader-text { font-size: 12px; }
+    .footer { margin-top: 40px; padding: 20px 12px; font-size: 12px; }
+}
+
+/* ---------- Very small phones (380px and below) ---------- */
+@media (max-width: 380px) {
+    .main-wrapper { padding: 24px 10px 50px; }
+    .controls-card { padding: 10px; }
+    .mode-tab { font-size: 12px; padding: 10px 6px; }
+
+    .compress-stats-panel { grid-template-columns: 1fr 1fr; }
+    .compress-stats-panel .stat-card:last-child { grid-column: 1 / -1; }
+    .crop-presets-wrapper .preset-buttons { grid-template-columns: repeat(2, 1fr); }
+
+    /* Stack the footer buttons, main action first */
+    .controls-footer { flex-direction: column-reverse; }
+    .controls-footer .action-btn { width: 100%; }
 }
