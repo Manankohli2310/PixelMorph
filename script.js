@@ -50,3 +50,82 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+
+
+/* Pixel Morph – background picker + cursor light
+   Load after script.js:  <script src="background.js"></script> */
+(() => {
+  const outer = document.querySelector('.blob-outer-container');
+  const hero = document.querySelector('.home-page');
+  const picker = document.querySelector('.bg-picker');
+  if (!outer || !hero) return;
+
+  const STORAGE_KEY = 'pixelmorph-bg';
+  const PATTERNS = ['smooth', 'ripple'];
+
+  /* ----- choose + remember the background ----- */
+  function setPattern(name) {
+    if (!PATTERNS.includes(name)) name = 'smooth';
+    outer.dataset.pattern = name;
+    if (picker) {
+      picker.querySelectorAll('button').forEach(b =>
+        b.setAttribute('aria-pressed', String(b.dataset.pattern === name)));
+    }
+    try { localStorage.setItem(STORAGE_KEY, name); } catch (e) {}
+  }
+
+  let saved = 'smooth';
+  try { saved = localStorage.getItem(STORAGE_KEY) || 'smooth'; } catch (e) {}
+  setPattern(saved);
+
+  if (picker) {
+    picker.addEventListener('click', e => {
+      const btn = e.target.closest('button[data-pattern]');
+      if (btn) setPattern(btn.dataset.pattern);
+    });
+  }
+
+  /* ----- pause animation when hero is offscreen ----- */
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([entry]) => {
+      outer.classList.toggle('is-paused', !entry.isIntersecting);
+    }).observe(hero);
+  }
+
+  /* ----- cursor-follow light (also centres the ripple pattern) ----- */
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const r0 = outer.getBoundingClientRect();
+  let tx = r0.width / 2, ty = r0.height * 0.4;
+  let x = tx, y = ty, running = false;
+  outer.style.setProperty('--mx', x);
+  outer.style.setProperty('--my', y);
+
+  hero.addEventListener('pointermove', e => {
+    const r = outer.getBoundingClientRect();
+    tx = e.clientX - r.left;
+    ty = e.clientY - r.top;
+    if (!running) { running = true; requestAnimationFrame(tick); }
+  });
+
+  function tick() {
+    x += (tx - x) * 0.07;
+    y += (ty - y) * 0.07;
+    outer.style.setProperty('--mx', x.toFixed(1));
+    outer.style.setProperty('--my', y.toFixed(1));
+    if (Math.abs(tx - x) + Math.abs(ty - y) > 0.5) requestAnimationFrame(tick);
+    else running = false;
+  }
+})();
+
+
+/* Version toggle: slide, then switch page */
+document.querySelectorAll('.ver-toggle a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    if (a.getAttribute('aria-current') === 'page') return;
+    a.parentElement.dataset.active = a.dataset.ver;
+    setTimeout(() => { location.href = a.getAttribute('href'); }, 280);
+  });
+});

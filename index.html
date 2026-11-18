@@ -9,7 +9,8 @@
   <title>Pixel Morph</title>
   <meta property="og:image" content="https://i.postimg.cc/qBCgvmJf/Pixel-Morph.png">
   <meta property="og:title" content="Pixel Morph">
-  <meta property="og:description" content="Transform. Compress. Convert. Easily edit and optimize your files with fast and secure online tool.">
+  <meta property="og:description"
+    content="Transform. Compress. Convert. Easily edit and optimize your files with fast and secure online tool.">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="favicon.ico" type="image/x-ico">
   <link rel="icon" href="favicon.ico" type="image/x-icon">
@@ -17,9 +18,13 @@
 </head>
 
 <body>
-  <div class="blob-outer-container">
-    <div class="blob-inner-container">
-      <div class="blob"></div>
+  <!-- Animated background (pattern is chosen from the picker in the footer) -->
+  <div class="blob-outer-container" data-pattern="smooth" aria-hidden="true">
+    <div class="bg-field">
+      <div class="bg-blob bg-blob--1"></div>
+      <div class="bg-blob bg-blob--2"></div>
+      <div class="bg-blob bg-blob--3"></div>
+      <div class="bg-pointer"></div>
     </div>
   </div>
   <div class="home-page">
@@ -100,6 +105,44 @@
   </main>
   <hr class="hr1">
   <footer>
+    <!-- Background style picker -->
+    <div class="bg-picker" role="group" aria-label="Background style">
+      <button type="button" data-pattern="smooth" aria-pressed="true">Smooth</button>
+      <button type="button" data-pattern="ripple" aria-pressed="false">Ripple</button>
+      <div class="ver-toggle" data-active="v2" role="group" aria-label="Website version">
+        <a href="v1.html" data-ver="v1">V1</a>
+        <a href="index.html" data-ver="v2" aria-current="page">V2</a>
+      </div>
+      <div class="ver-info" role="tooltip">
+        <div class="ver-info__card">
+          <section class="ver-col ver-col--v1">
+            <h4>V1 <span>Classic</span></h4>
+            <ul>
+              <li>One spinning gradient blob</li>
+              <li>Fixed teal, blue and purple colours</li>
+              <li>Static background, no interaction</li>
+              <li>Always animating</li>
+              <li>Purple accent on the Image to PDF card</li>
+            </ul>
+          </section>
+
+          <section class="ver-col ver-col--v2">
+            <h4>V2 <span>Latest</span></h4>
+            <ul>
+              <li>Three morphing, drifting organic blobs</li>
+              <li>Smooth and Ripple styles, switchable in the footer</li>
+              <li>Light that follows your cursor</li>
+              <li>Film grain and vignette for depth</li>
+              <li>Remembers your chosen style</li>
+              <li>Pauses when scrolled out of view to save battery</li>
+              <li>Respects the reduced-motion setting</li>
+              <li>Lighter blur on mobile for smoother performance</li>
+              <li>New warm gold and olive palette</li>
+            </ul>
+          </section>
+        </div>
+      </div>
+    </div>
     <div class="copyright">
       &copy; Pixel Morph | Manan Kohli. All Rights Reserved.
     </div>

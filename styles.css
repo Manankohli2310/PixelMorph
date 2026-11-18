@@ -717,3 +717,350 @@ hr{
     transform: scale(0.78);
   }
 } 
+
+
+/* =====================================================================
+   Pixel Morph – animated background styles
+   Load AFTER styles.css:  <link rel="stylesheet" href="background.css">
+   Reuses your existing .blob-outer-container (so all your responsive
+   heights in styles.css keep working) and only changes what is inside.
+   ===================================================================== */
+
+.blob-outer-container {
+  --c-olive: 214, 160, 62;
+  --c-teal:  43, 140, 118;
+  --c-sky:   79, 142, 167;
+  --c-moss:  96, 110, 48;
+
+  filter: none;               /* the old blur(150px) is now done inside */
+  background: #000;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+/* ---------- colour field (blurred once for all blobs) ---------- */
+.bg-field {
+  position: absolute;
+  inset: -20%;
+  filter: blur(70px) saturate(1.25);
+  transform: translateZ(0);
+}
+.blob-outer-container:not([data-pattern="smooth"]) .bg-field {
+  filter: blur(46px) saturate(1.35) brightness(1.1);
+}
+
+.bg-blob {
+  position: absolute;
+  width: 46vmax;
+  height: 46vmax;
+  min-width: 380px;
+  min-height: 380px;
+  opacity: .9;
+  mix-blend-mode: screen;
+  will-change: transform, border-radius;
+}
+.bg-blob--1 {
+  top: 8%; left: 2%;
+  background: radial-gradient(circle at 35% 35%, rgba(var(--c-olive), 1), rgba(var(--c-moss), .55) 55%, transparent 72%);
+  animation: bg-morph-a 17s ease-in-out infinite alternate, bg-drift-1 29s ease-in-out infinite alternate;
+}
+.bg-blob--2 {
+  top: 0; right: 0;
+  background: radial-gradient(circle at 60% 40%, rgba(var(--c-teal), 1), rgba(var(--c-sky), .5) 55%, transparent 72%);
+  animation: bg-morph-b 21s ease-in-out infinite alternate, bg-drift-2 37s ease-in-out infinite alternate;
+}
+.bg-blob--3 {
+  bottom: -10%; left: 30%;
+  width: 36vmax; height: 36vmax;
+  background: radial-gradient(circle at 50% 50%, rgba(var(--c-sky), .9), rgba(var(--c-teal), .4) 60%, transparent 74%);
+  animation: bg-morph-c 25s ease-in-out infinite alternate, bg-drift-3 33s ease-in-out infinite alternate;
+}
+
+/* soft light that follows the cursor */
+.bg-pointer {
+  position: absolute;
+  left: 0; top: 0;
+  width: 22vmax; height: 22vmax;
+  min-width: 220px; min-height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 220, 150, .7), transparent 68%);
+  mix-blend-mode: screen;
+  transform: translate3d(calc(var(--mx, 400) * 1px - 50%), calc(var(--my, 180) * 1px - 50%), 0);
+  will-change: transform;
+}
+
+/* faint glow under masked patterns so gaps are not dead black */
+.blob-outer-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(40% 60% at 20% 40%, rgba(var(--c-olive), .16), transparent 70%),
+    radial-gradient(45% 65% at 78% 35%, rgba(var(--c-teal), .20), transparent 70%);
+}
+.blob-outer-container[data-pattern="smooth"]::before { display: none; }
+
+/* vignette + film grain */
+.blob-outer-container::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,.6) 100%),
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .9 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 100% 100%, 220px 220px;
+  opacity: .55;
+  mix-blend-mode: overlay;
+}
+.blob-outer-container[data-pattern="smooth"]::after { opacity: .85; }
+
+/* ---------- PATTERN MASKS ---------- */
+
+/* ripple (rings spread from the cursor) */
+@property --phase { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.blob-outer-container[data-pattern="ripple"] .bg-field {
+  --rx: calc(14.2857% + var(--mx, 400) * 1px);
+  --ry: calc(14.2857% + var(--my, 180) * 1px);
+  --mask-ripple: repeating-radial-gradient(circle at var(--rx) var(--ry),
+    #000 var(--phase),
+    #000 calc(var(--phase) + 5px),
+    transparent calc(var(--phase) + 6px),
+    transparent calc(var(--phase) + 30px));
+  -webkit-mask-image: var(--mask-ripple);
+          mask-image: var(--mask-ripple);
+  animation: bg-ripple-out 3.2s linear infinite;
+}
+@keyframes bg-ripple-out { to { --phase: 30px; } }
+
+/* ---------- blob motion ---------- */
+@keyframes bg-morph-a {
+  0%   { border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; }
+  33%  { border-radius: 63% 37% 41% 59% / 55% 62% 38% 45%; }
+  66%  { border-radius: 38% 62% 55% 45% / 62% 36% 64% 38%; }
+  100% { border-radius: 55% 45% 36% 64% / 38% 57% 43% 62%; }
+}
+@keyframes bg-morph-b {
+  0%   { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+  50%  { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+  100% { border-radius: 52% 48% 40% 60% / 36% 64% 44% 56%; }
+}
+@keyframes bg-morph-c {
+  0%   { border-radius: 50% 50% 34% 66% / 56% 40% 60% 44%; }
+  50%  { border-radius: 36% 64% 58% 42% / 40% 58% 42% 60%; }
+  100% { border-radius: 64% 36% 46% 54% / 52% 38% 62% 48%; }
+}
+@keyframes bg-drift-1 {
+  0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+  50%  { transform: translate3d(12vw, 8vh, 0) rotate(90deg) scale(1.15); }
+  100% { transform: translate3d(4vw, -6vh, 0) rotate(200deg) scale(.95); }
+}
+@keyframes bg-drift-2 {
+  0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1.05); }
+  50%  { transform: translate3d(-14vw, 10vh, 0) rotate(-110deg) scale(.9); }
+  100% { transform: translate3d(-4vw, 18vh, 0) rotate(-220deg) scale(1.12); }
+}
+@keyframes bg-drift-3 {
+  0%   { transform: translate3d(0,0,0) rotate(0deg) scale(1); }
+  50%  { transform: translate3d(-18vw, -10vh, 0) rotate(120deg) scale(1.2); }
+  100% { transform: translate3d(14vw, -4vh, 0) rotate(260deg) scale(.9); }
+}
+
+/* pause when the hero is scrolled out of view (class set by background.js) */
+.blob-outer-container.is-paused .bg-blob,
+.blob-outer-container.is-paused .bg-field { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-blob, .bg-field { animation: none !important; }
+  .bg-pointer { display: none; }
+}
+@media (max-width: 640px) {
+  .blob-outer-container .bg-field { filter: blur(34px) saturate(1.3) brightness(1.1); }
+  .blob-outer-container[data-pattern="smooth"] .bg-field { filter: blur(48px) saturate(1.2); }
+}
+
+/* =====================================================================
+   Background picker (inside <footer>, above the copyright line)
+   Styled like the navbar: translucent pill holder + pill buttons
+   ===================================================================== */
+.bg-picker {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 24px);
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: rgb(34 34 34 / 57%);
+  border-radius: 50px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 2;
+}
+
+.bg-picker button {
+  font-family: Roboto Mono, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: white;
+  background: rgba(109, 108, 108, 0.226);
+  border: none;
+  padding: 6px 16px;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+.bg-picker button:hover,
+.bg-picker button[aria-pressed="true"] {
+  background: #eee;
+  color: black;
+}
+.bg-picker button:focus-visible {
+  box-shadow: 0 0 0 2px rgba(224, 171, 72, 0.9);
+}
+
+/* desktop footer: nudge the copyright down a little to make room for the picker */
+@media (min-width: 801px) {
+  .copyright { margin-top: 24px; }
+}
+
+
+/* ---------- Version toggle ---------- */
+.ver-toggle {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  margin-left: 4px;
+  background: rgba(109, 108, 108, 0.226);
+  border-radius: 50px;
+}
+.ver-toggle::before {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: calc((100% - 6px) / 2);
+  height: calc(100% - 6px);
+  background: #eee;
+  border-radius: 50px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.ver-toggle[data-active="v2"]::before { transform: translateX(100%); }
+
+.ver-toggle a {
+  position: relative;
+  z-index: 1;
+  padding: 6px 14px;
+  text-align: center;
+  font-family: Roboto Mono, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  color: white;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+.ver-toggle[data-active="v1"] a[data-ver="v1"],
+.ver-toggle[data-active="v2"] a[data-ver="v2"] { color: black; }
+.ver-toggle a:focus-visible { box-shadow: 0 0 0 2px rgba(224, 171, 72, 0.9); border-radius: 50px; }
+
+
+
+
+
+/* ---------- Version info drop-up ---------- */
+.bg-picker { z-index: 2000000; }   /* keep the panel above the cards */
+
+.ver-info {
+  position: absolute;
+  bottom: calc(100% - 8px);        /* overlaps the picker padding so hover never drops */
+  left: 50%;
+  width: min(620px, calc(100vw - 24px));
+  padding-bottom: 18px;            /* invisible hover bridge + visual gap */
+  transform: translateX(-50%) translateY(8px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+}
+.ver-toggle:hover + .ver-info,
+.ver-toggle:focus-within + .ver-info,
+.ver-info:hover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.ver-info,
+.ver-info * { font-family: Roboto Mono, Arial, Helvetica, sans-serif; }
+
+.ver-info__card {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 0;
+  padding: 6px;
+  background: rgba(16, 16, 16, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  color: #eee;
+  text-align: left;
+}
+
+.ver-col { padding: 14px 16px; border-radius: 16px; }
+.ver-col--v2 { background: rgba(109, 108, 108, 0.16); }
+
+.ver-col h4 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-family: Orbitron, Roboto Mono, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: #eee;
+}
+.ver-col h4 span {
+  padding: 2px 8px;
+  border-radius: 50px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+  background: rgba(109, 108, 108, 0.35);
+  color: #ccc;
+}
+.ver-col--v2 h4 span { background: #eee; color: #000; }
+
+.ver-col ul { list-style: none; }
+.ver-col li {
+  position: relative;
+  padding-left: 16px;
+  margin-bottom: 7px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: rgba(238, 238, 238, 0.7);
+}
+.ver-col li::before {
+  position: absolute;
+  left: 0;
+  color: rgba(238, 238, 238, 0.4);
+}
+.ver-col--v1 li::before { content: "•"; }
+.ver-col--v2 li::before { content: "+"; color: #e0ab48; font-weight: 700; }
+
+/* "you're here" marker follows the active version */
+.ver-toggle[data-active="v1"] + .ver-info .ver-col--v1 h4::after,
+.ver-toggle[data-active="v2"] + .ver-info .ver-col--v2 h4::after {
+  content: "you're here";
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 400;
+  color: #e0ab48;
+}
+
+@media (max-width: 560px) {
+  .ver-info__card { grid-template-columns: 1fr; }
+}
