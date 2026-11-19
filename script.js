@@ -122,6 +122,37 @@
     revealEls.forEach(el => el.classList.add('in'));
   }
 
+  /* ---------- 4b. formats marquee: always wider than the screen, so it never runs out ---------- */
+  const track = document.querySelector('.marquee .track');
+  if (track) {
+    const groups = track.querySelectorAll('.group');
+    const base = [...groups[0].children].map(n => n.cloneNode(true));
+    const SPEED = 55; // pixels per second
+
+    const buildMarquee = () => {
+      const fill = g => g.replaceChildren(...base.map(n => n.cloneNode(true)));
+      fill(groups[0]);
+      let guard = 0;
+      while (groups[0].getBoundingClientRect().width < window.innerWidth && guard++ < 12) {
+        base.forEach(n => groups[0].appendChild(n.cloneNode(true)));
+      }
+      // second group is an exact copy, so the loop is seamless
+      groups[1].replaceChildren(...[...groups[0].children].map(n => n.cloneNode(true)));
+      const w = groups[0].getBoundingClientRect().width;
+      track.style.setProperty('--dur', (w / SPEED).toFixed(1) + 's');
+    };
+
+    buildMarquee();
+    let lastW = window.innerWidth, t;
+    window.addEventListener('resize', () => {
+      if (window.innerWidth === lastW) return;
+      lastW = window.innerWidth;
+      clearTimeout(t);
+      t = setTimeout(buildMarquee, 150);
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(buildMarquee);
+  }
+
   /* ---------- 5. cards: cursor spotlight + gentle tilt (mouse only) ---------- */
   if (!reduceMotion && matchMedia('(hover: hover) and (pointer: fine)').matches) {
     document.querySelectorAll('.container').forEach(card => {

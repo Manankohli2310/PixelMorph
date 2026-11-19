@@ -60,7 +60,7 @@ body::-webkit-scrollbar-thumb {
   overflow: hidden;
   min-height: 560px;
   min-height: clamp(520px, 88svh, 680px);
-  padding: 120px 20px 100px;
+  padding: 50px 20px 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -83,11 +83,8 @@ body::-webkit-scrollbar-thumb {
 
 /* ---------- navbar ---------- */
 .navbar {
-  position: absolute;
-  top: 28px;
-  left: 0;
-  right: 0;
-  margin-inline: auto;
+  position: relative;
+  margin-bottom: 30px;
   width: max-content;
   max-width: calc(100% - 24px);
   display: flex;
@@ -486,7 +483,7 @@ body::-webkit-scrollbar-thumb {
 .track {
   display: flex;
   width: max-content;
-  animation: marquee 38s linear infinite;
+  animation: marquee var(--dur, 40s) linear infinite;
 }
 .marquee:hover .track { animation-play-state: paused; }
 .group {
@@ -665,17 +662,23 @@ footer::before {
   margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
+  grid-template-areas:
+    ".    bar  sign"
+    "copy copy copy";
   align-items: center;
-  gap: 20px;
+  row-gap: 0px;
 }
 
 .copyright {
-  justify-self: start;
+  grid-area: copy;
+  justify-self: center;
+  text-align: center;
   font-size: 14px;
   line-height: 1.5;
 }
 
 .right-section {
+  grid-area: sign;
   justify-self: end;
   display: flex;
   flex-direction: column;
@@ -696,6 +699,8 @@ footer::before {
 
 /* ---------- Version bar ---------- */
 .version-bar {
+  grid-area: bar;
+  justify-self: center;
   position: relative;
   width: max-content;
   max-width: 100%;
@@ -876,13 +881,14 @@ footer::before {
 @media (max-width: 900px) {
   .footer-inner {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "bar"
+      "sign"
+      "copy";
     justify-items: center;
-    text-align: center;
-    gap: 22px;
+    row-gap: 22px;
   }
-  .version-bar { order: 1; }
-  .copyright { order: 2; justify-self: center; }
-  .right-section { order: 3; justify-self: center; }
+  .right-section { justify-self: center; }
 }
 
 @media (max-width: 800px) {
@@ -918,6 +924,12 @@ footer::before {
 }
 
 @media (max-width: 640px) {
+  /* three glows kept apart (top-left, right, bottom) with normal blending,
+     so emerald / orange / cyan never mix into a new colour */
+  .bg-orb { width: 72vw; mix-blend-mode: normal; }
+  .orb-emerald { left: -22vw; top: 2%; }
+  .orb-orange  { right: -22vw; top: 26%; }
+  .orb-cyan    { left: 50%; bottom: -30%; }
   .bg-fx { --cell: 36px; }
   .bg-lit { -webkit-mask-image: radial-gradient(circle 190px at calc(var(--mx, 200) * 1px) calc(var(--my, 360) * 1px), #000, transparent);
                     mask-image: radial-gradient(circle 190px at calc(var(--mx, 200) * 1px) calc(var(--my, 360) * 1px), #000, transparent); }
@@ -932,7 +944,7 @@ footer::before {
 }
 
 @media (max-width: 520px) {
-  .navbar { gap: 6px; padding: 6px 8px; top: 22px; }
+  .navbar { gap: 6px; padding: 6px 8px; }
   .nav-btn { padding: 8px 12px; font-size: 12px; }
   /* keep the last dropdown inside the screen */
   .nav-item:last-child .dropdown { left: auto; right: 0; translate: 0 6px; }
