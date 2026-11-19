@@ -171,7 +171,7 @@ body::-webkit-scrollbar-thumb {
   font-size: clamp(40px, 12vw, 104px);
   font-weight: 600;
   line-height: 1.1;
-  color: #eee;
+  color: #ffffff;
   text-shadow: 0 0 60px rgba(255, 255, 255, 0.12);
 }
 .title .ch {
@@ -992,4 +992,10 @@ footer::before {
   .js .reveal:not(.in) .tri-line { width: 96px; }
   .bg-lit { display: none; }
   .container { transform: none !important; }
+}
+
+@media (max-width: 450px) {
+  .title{
+    font-size: clamp(40px, 14vw, 104px);
+  }
 }
