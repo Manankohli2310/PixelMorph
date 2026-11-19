@@ -1,131 +1,153 @@
-const texts = ["Transform. Compress. Convert.", "Published by Manan Kohli."];
-let index = 0;
-let charIndex = 0;
-let isDeleting = false;
-const speed = 100; // Typing speed in ms
-const delay = 2000; // Delay before switching text
-const blankDelay = 500; // Delay to show blank space when deleting
-
-function typeEffect() {
-  let currentText = texts[index];
-  let displayText = currentText.substring(0, charIndex);
-  document.getElementById("typewriter").textContent = displayText;
-
-  if (isDeleting) {
-    if (charIndex > 0) {
-      charIndex--;
-      setTimeout(typeEffect, speed / 2); // Faster deletion
-    } else {
-      document.getElementById("typewriter").textContent = ""; // Show blank space
-      setTimeout(() => {
-        isDeleting = false;
-        index = (index + 1) % texts.length;
-        setTimeout(typeEffect, speed);
-      }, blankDelay);
-    }
-  } else {
-    if (charIndex <= currentText.length) {
-      charIndex++;
-      setTimeout(typeEffect, speed);
-    } else {
-      isDeleting = true;
-      setTimeout(typeEffect, delay);
-    }
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  typeEffect();
-
-  // Smooth scroll effect for the button
-  const scrollButton = document.querySelector("a[href='#hr']");
-  if (scrollButton) {
-    scrollButton.addEventListener("click", function (event) {
-      event.preventDefault(); // Prevent default anchor behavior
-
-      const targetElement = document.querySelector("#hr");
-      if (targetElement) {
-        targetElement.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    });
-  }
-});
-
-
-
-/* Pixel Morph – background picker + cursor light
-   Load after script.js:  <script src="background.js"></script> */
+/* Pixel Morph – home page script
+   1. Hero title letter animation + typewriter
+   2. Navbar dropdowns (tap-friendly)
+   3. Background cursor-lit grid, pause when off-screen
+   4. Reveal-on-scroll
+   5. Card cursor spotlight + tilt
+   6. Version toggle
+*/
 (() => {
-  const outer = document.querySelector('.blob-outer-container');
-  const hero = document.querySelector('.home-page');
-  const picker = document.querySelector('.bg-picker');
-  if (!outer || !hero) return;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const STORAGE_KEY = 'pixelmorph-bg';
-  const PATTERNS = ['smooth', 'ripple'];
-
-  /* ----- choose + remember the background ----- */
-  function setPattern(name) {
-    if (!PATTERNS.includes(name)) name = 'smooth';
-    outer.dataset.pattern = name;
-    if (picker) {
-      picker.querySelectorAll('button').forEach(b =>
-        b.setAttribute('aria-pressed', String(b.dataset.pattern === name)));
-    }
-    try { localStorage.setItem(STORAGE_KEY, name); } catch (e) {}
-  }
-
-  let saved = 'smooth';
-  try { saved = localStorage.getItem(STORAGE_KEY) || 'smooth'; } catch (e) {}
-  setPattern(saved);
-
-  if (picker) {
-    picker.addEventListener('click', e => {
-      const btn = e.target.closest('button[data-pattern]');
-      if (btn) setPattern(btn.dataset.pattern);
+  /* ---------- 1a. hero title: split into letters for the entrance animation ---------- */
+  const title = document.querySelector('.title');
+  if (title && !reduceMotion) {
+    const text = title.textContent.trim();
+    title.setAttribute('aria-label', text);
+    title.textContent = '';
+    [...text].forEach((ch, i) => {
+      const s = document.createElement('span');
+      s.className = 'ch';
+      s.setAttribute('aria-hidden', 'true');
+      s.style.setProperty('--i', i);
+      s.textContent = ch === ' ' ? '\u00A0' : ch;
+      title.appendChild(s);
     });
   }
 
-  /* ----- pause animation when hero is offscreen ----- */
-  if ('IntersectionObserver' in window) {
-    new IntersectionObserver(([entry]) => {
-      outer.classList.toggle('is-paused', !entry.isIntersecting);
-    }).observe(hero);
+  /* ---------- 1b. typewriter ---------- */
+  const typeEl = document.getElementById('typewriter');
+  const texts = ['Transform. Compress. Convert.', 'Published by Manan Kohli.'];
+  if (typeEl) {
+    if (reduceMotion) {
+      typeEl.textContent = texts[0];
+    } else {
+      let i = 0, c = 0, deleting = false;
+      const SPEED = 90, DELETE_SPEED = 45, HOLD = 2000, BLANK = 500;
+      const tick = () => {
+        const t = texts[i];
+        typeEl.textContent = t.slice(0, c);
+        if (!deleting) {
+          if (c < t.length) { c++; return setTimeout(tick, SPEED); }
+          deleting = true;
+          return setTimeout(tick, HOLD);
+        }
+        if (c > 0) { c--; return setTimeout(tick, DELETE_SPEED); }
+        deleting = false;
+        i = (i + 1) % texts.length;
+        setTimeout(tick, BLANK);
+      };
+      setTimeout(tick, 1100);
+    }
   }
 
-  /* ----- cursor-follow light (also centres the ripple pattern) ----- */
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  const r0 = outer.getBoundingClientRect();
-  let tx = r0.width / 2, ty = r0.height * 0.4;
-  let x = tx, y = ty, running = false;
-  outer.style.setProperty('--mx', x);
-  outer.style.setProperty('--my', y);
-
-  hero.addEventListener('pointermove', e => {
-    const r = outer.getBoundingClientRect();
-    tx = e.clientX - r.left;
-    ty = e.clientY - r.top;
-    if (!running) { running = true; requestAnimationFrame(tick); }
+  /* ---------- 2. navbar dropdowns: tap to open on touch screens ---------- */
+  const navItems = document.querySelectorAll('.nav-item');
+  navItems.forEach(item => {
+    const btn = item.querySelector('.nav-btn');
+    if (!btn) return;
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const wasOpen = item.classList.contains('open');
+      navItems.forEach(n => n.classList.remove('open'));
+      if (!wasOpen) item.classList.add('open');
+    });
+  });
+  document.addEventListener('click', () => navItems.forEach(n => n.classList.remove('open')));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') navItems.forEach(n => n.classList.remove('open'));
   });
 
-  function tick() {
-    x += (tx - x) * 0.07;
-    y += (ty - y) * 0.07;
-    outer.style.setProperty('--mx', x.toFixed(1));
-    outer.style.setProperty('--my', y.toFixed(1));
-    if (Math.abs(tx - x) + Math.abs(ty - y) > 0.5) requestAnimationFrame(tick);
-    else running = false;
+  /* ---------- 3. background: cursor-lit grid + pause when off-screen ---------- */
+  const fx = document.querySelector('.bg-fx');
+  const hero = document.querySelector('.home-page');
+
+  if (fx && hero) {
+    /* pause the animation when the hero is offscreen */
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([entry]) => {
+        fx.classList.toggle('is-paused', !entry.isIntersecting);
+      }).observe(hero);
+    }
+
+    /* the lit grid follows the cursor smoothly */
+    if (!reduceMotion) {
+      const r0 = fx.getBoundingClientRect();
+      let tx = r0.width / 2, ty = r0.height * 0.7;
+      let x = tx, y = ty, running = false;
+      fx.style.setProperty('--mx', x);
+      fx.style.setProperty('--my', y);
+
+      const tick = () => {
+        x += (tx - x) * 0.1;
+        y += (ty - y) * 0.1;
+        fx.style.setProperty('--mx', x.toFixed(1));
+        fx.style.setProperty('--my', y.toFixed(1));
+        if (Math.abs(tx - x) + Math.abs(ty - y) > 0.5) requestAnimationFrame(tick);
+        else running = false;
+      };
+
+      hero.addEventListener('pointermove', e => {
+        const r = fx.getBoundingClientRect();
+        tx = e.clientX - r.left;
+        ty = e.clientY - r.top;
+        if (!running) { running = true; requestAnimationFrame(tick); }
+      });
+    }
   }
+
+  /* ---------- 4. reveal on scroll ---------- */
+  const revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && !reduceMotion) {
+    const io = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -6% 0px' });
+    revealEls.forEach(el => io.observe(el));
+  } else {
+    revealEls.forEach(el => el.classList.add('in'));
+  }
+
+  /* ---------- 5. cards: cursor spotlight + gentle tilt (mouse only) ---------- */
+  if (!reduceMotion && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    document.querySelectorAll('.container').forEach(card => {
+      card.addEventListener('pointermove', e => {
+        const r = card.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width;
+        const py = (e.clientY - r.top) / r.height;
+        card.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+        card.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+        card.style.setProperty('--rx', ((0.5 - py) * 6).toFixed(2) + 'deg');
+        card.style.setProperty('--ry', ((px - 0.5) * 8).toFixed(2) + 'deg');
+      });
+      card.addEventListener('pointerleave', () => {
+        card.style.setProperty('--rx', '0deg');
+        card.style.setProperty('--ry', '0deg');
+      });
+    });
+  }
+
+  /* ---------- 6. version toggle: slide, then switch page ---------- */
+  document.querySelectorAll('.ver-toggle a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      if (a.getAttribute('aria-current') === 'page') return;
+      a.parentElement.dataset.active = a.dataset.ver;
+      setTimeout(() => { location.href = a.getAttribute('href'); }, 280);
+    });
+  });
 })();
-
-
-/* Version toggle: slide, then switch page */
-document.querySelectorAll('.ver-toggle a').forEach(a => {
-  a.addEventListener('click', e => {
-    e.preventDefault();
-    if (a.getAttribute('aria-current') === 'page') return;
-    a.parentElement.dataset.active = a.dataset.ver;
-    setTimeout(() => { location.href = a.getAttribute('href'); }, 280);
-  });
-});
