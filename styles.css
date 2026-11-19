@@ -185,7 +185,7 @@ body::-webkit-scrollbar-thumb {
   margin: 14px 0 34px;
   font-family: var(--font-mono);
   font-size: 18px;
-  color: #eee;
+  color: #ffffff;
   animation: fadeUp 0.8s var(--ease-out) 1s both;
 }
 #typewriter::after {
