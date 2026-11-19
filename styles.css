@@ -84,7 +84,7 @@ body::-webkit-scrollbar-thumb {
 /* ---------- navbar ---------- */
 .navbar {
   position: relative;
-  margin-bottom: 70px;
+  margin-bottom: 30px;
   width: max-content;
   max-width: calc(100% - 24px);
   display: flex;
@@ -201,10 +201,11 @@ body::-webkit-scrollbar-thumb {
 
 /* ---------- Explore button ---------- */
 .button {
+  font-size: 14px;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1.5rem 0.75rem 20px;
+  gap: 0.5rem;
+  padding: 0.75rem 1.2rem 0.75rem 17px;
   background-color: rgba(29, 28, 28, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10rem;
@@ -666,7 +667,7 @@ footer::before {
     ".    bar  sign"
     "copy copy copy";
   align-items: center;
-  row-gap: 22px;
+  row-gap: 0px;
 }
 
 .copyright {
