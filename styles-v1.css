@@ -722,7 +722,7 @@ hr{
 
 .bg-picker {
   position: absolute;
-  top: 6px;
+  top: 15px;
   left: 50%;
   transform: translateX(-50%);
   width: max-content;
@@ -730,15 +730,15 @@ hr{
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px;
-  background: rgb(34 34 34 / 57%);
+  padding: 8px 12px;
+  background: rgb(34 34 34 / 36%);
   border-radius: 50px;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: 2;
 }
 @media (min-width: 801px) {
-  .copyright { margin-top: 24px; }
+  .copyright { margin-top: 70px; }
 }
 
 
@@ -879,4 +879,66 @@ hr{
 
 @media (max-width: 560px) {
   .ver-info__card { grid-template-columns: 1fr; }
+}
+
+
+/* ---------- Mobile: show version info under the toggle (no hover) ---------- */
+@media (max-width: 800px) {
+
+  /* let the footer grow to fit the picker + info boxes */
+  footer {
+    height: auto;
+    gap: 16px;
+    padding: 16px 12px 24px;
+  }
+
+  /* picker becomes a normal block in the footer flow */
+  .bg-picker {
+    position: static;
+    transform: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: calc(100% - 12px);
+    max-width: 440px;
+    border-radius: 26px;
+  }
+
+  /* copyright + signature flow normally, one under the other */
+  .copyright {
+    position: static;
+    transform: none;
+    margin: 0;
+    white-space: normal;
+  }
+  .right-section {
+    margin-top: 0;
+  }
+
+  /* info panel: always visible, on its own row below the buttons */
+  .ver-info,
+  .ver-toggle:hover + .ver-info,
+  .ver-toggle:focus-within + .ver-info,
+  .ver-info:hover {
+    position: static;
+    flex: 0 0 100%;
+    width: 100%;
+    margin-top: 6px;
+    padding-bottom: 0;
+    transform: none;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: none;
+  }
+
+  .ver-info__card {
+    box-shadow: none;
+    background: rgba(16, 16, 16, 0.6);
+  }
+}
+
+/* narrow phones: stack V1 above V2 */
+@media (max-width: 560px) {
+  .ver-info__card { grid-template-columns: 1fr; }
+  .ver-col--v2 { margin-top: 4px; }
 }
