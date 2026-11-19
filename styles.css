@@ -86,10 +86,10 @@ body::-webkit-scrollbar-thumb {
   position: relative;
   margin-bottom: 30px;
   width: max-content;
-  max-width: calc(100% - 24px);
+  /* max-width: calc(100% - 24px); */
   display: flex;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 8px 20px;
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 50px;
@@ -926,7 +926,7 @@ footer::before {
 
 @media (max-width: 640px) {
   /* hero hugs its content, so the space above and below stays balanced */
-  .home-page { min-height: 460px; padding: 44px 20px 64px; }
+  .home-page { min-height: 460px; padding: 44px 0px 64px; }
   .home-page::after { height: 80px; }
 
   /* three glows spread evenly around the title (zig-zag: top-left, right, bottom),
@@ -967,15 +967,18 @@ footer::before {
 }
 
 @media (max-width: 520px) {
-  .navbar { gap: 6px; padding: 6px 8px; }
-  .nav-btn { padding: 8px 12px; font-size: 12px; }
+  /* .navbar { gap: 6px; padding: 6px 8px; } */
+  .nav-btn { padding: 8px 12px; font-size: 13px; }
   /* keep the last dropdown inside the screen */
   .nav-item:last-child .dropdown { left: auto; right: 0; translate: 0 6px; }
   .nav-item:last-child:hover .dropdown,
   .nav-item:last-child:focus-within .dropdown,
   .nav-item:last-child.open .dropdown { translate: 0 0; }
 }
-
+@media (max-width: 400px) {
+  .nav-btn { padding: 8px 12px; font-size: 12px; }
+  .navbar { padding: 8px 14px;}
+}
 /* =====================================================================
    REDUCED MOTION
    ===================================================================== */
