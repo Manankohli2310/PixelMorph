@@ -865,7 +865,7 @@ hr{
   color: rgba(238, 238, 238, 0.4);
 }
 .ver-col--v1 li::before { content: "•"; }
-.ver-col--v2 li::before { content: "+"; color: #e0ab48; font-weight: 700; }
+.ver-col--v2 li::before { content: "+"; color: #f19f33e8; font-weight: 700; }
 
 /* "you're here" marker follows the active version */
 .ver-toggle[data-active="v1"] + .ver-info .ver-col--v1 h4::after,
@@ -874,7 +874,7 @@ hr{
   margin-left: auto;
   font-size: 10px;
   font-weight: 400;
-  color: #e0ab48;
+  color: #29dae0;
 }
 
 @media (max-width: 560px) {

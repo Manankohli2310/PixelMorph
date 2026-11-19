@@ -30,8 +30,8 @@ body::-webkit-scrollbar-track {
 }
 
 :root {
-    --bg-black: #050507;
-    --card-bg: rgba(14, 12, 18, 0.78);
+    --bg-black: #070605;
+    --card-bg: rgba(18, 16, 12, 0.78);
     --card-border: rgba(249, 115, 22, 0.18);
     --card-border-hover: rgba(249, 115, 22, 0.45);
     
@@ -352,7 +352,7 @@ body {
 
 .mode-tabs {
     display: inline-flex;
-    background: rgba(18, 16, 24, 0.85);
+    background: rgba(24, 22, 16, 0.85);
     border: 1px solid var(--card-border);
     padding: 4px;
     border-radius: 12px;
@@ -851,7 +851,7 @@ body {
    Footer (Scroll-Only Visibility)
    ========================================================= */
 .footer {
-    background: rgba(8, 8, 12, 0.88);
+    background: rgba(12, 11, 8, 0.88);
     backdrop-filter: blur(16px);
     border-top: 1px solid rgba(249, 115, 22, 0.12);
     padding: 24px 16px;
