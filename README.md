@@ -115,7 +115,7 @@ While retaining the core idea of the original version, V2 takes PixelMorph furth
 
 ## 📸 Interface Preview
 
-![PixelMorph V2 Homepage](assets/screenshots/v2/homepage.png)
+![PixelMorph V2 Homepage](assets/HomepageV2.png)
 
 *The redesigned PixelMorph V2 interface.*
 
