@@ -77,6 +77,7 @@ let isAspectLocked = true;
 let activeToolMode = "resize";
 let cropperInstance = null;
 let isFlippedH = false;
+let uploadToken = 0; // guards against out-of-order async loads
 
 // Fixed dimensions for the canvas element to prevent DOM reflow
 const CANVAS_STAGE_W = 800;
@@ -171,11 +172,22 @@ function formatBytes(bytes) {
     return (bytes / Math.pow(k, i)).toFixed(1) + " " + sizes[i];
 }
 
+// Only these formats are accepted
+const ALLOWED_EXT = /\.(png|jpe?g|webp|jfif)$/i;
+const ALLOWED_MIME = ["image/png", "image/jpeg", "image/pjpeg", "image/webp"];
+
+function isAllowedFile(file) {
+    return ALLOWED_EXT.test(file.name) || ALLOWED_MIME.includes(file.type);
+}
+
 function processUploadedImage(file) {
-    if (!file.type.startsWith("image/")) {
-        alert("Please upload a valid image file.");
+    if (!isAllowedFile(file)) {
+        alert("Unsupported file. Please upload a PNG, JPG, WEBP or JFIF image.");
+        fileInput.value = "";
         return;
     }
+
+    const token = ++uploadToken;
 
     originalFile = file;
     originalFileSize = file.size;
@@ -186,12 +198,16 @@ function processUploadedImage(file) {
 
     const reader = new FileReader();
     reader.onload = (e) => {
+        if (token !== uploadToken) return;
+
         originalImage = new Image();
         originalImage.onload = () => {
+            if (token !== uploadToken) return;
+
             originalWidth = originalImage.naturalWidth || originalImage.width;
             originalHeight = originalImage.naturalHeight || originalImage.height;
 
-            fileDimsLabel.textContent = `${originalWidth} × ${originalHeight} px`;
+            fileDimsLabel.textContent = `${originalWidth} \u00d7 ${originalHeight} px`;
             resizeWidthInput.value = originalWidth;
             resizeHeightInput.value = originalHeight;
 
@@ -205,6 +221,10 @@ function processUploadedImage(file) {
             controlsCard.style.display = "block";
 
             updateCompressionEstimate();
+        };
+        originalImage.onerror = () => {
+            if (token !== uploadToken) return;
+            alert("This browser could not read that image.");
         };
         originalImage.src = e.target.result;
         imageElement.src = e.target.result;
@@ -405,21 +425,45 @@ executeResizeCropBtn.addEventListener("click", (e) => {
             oCtx.drawImage(originalImage, 0, 0, targetW, targetH);
         }
 
+        // Keep the original format (PNG, JPEG or WEBP); JFIF is JPEG, so it is saved as .jpg
+        const wantType = /^image\/(png|jpeg|webp)$/.test(originalFile.type) ? originalFile.type : "image/png";
+
         outputCanvas.toBlob((blob) => {
+            if (!blob) {
+                loadingOverlay.classList.add("hidden");
+                alert("Could not create the image. It may be too large for this browser.");
+                return;
+            }
+            const extMap = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
+            const ext = extMap[blob.type] || "png";
             const outputUrl = URL.createObjectURL(blob);
             loadingOverlay.classList.add("hidden");
             thankYouOverlay.classList.remove("hidden");
 
-            const ext = originalFile.name.split(".").pop() || "png";
             downloadButton.href = outputUrl;
             downloadButton.download = `pixelmorph-${activeToolMode}-${Date.now()}.${ext}`;
-        }, originalFile.type || "image/png", 0.95);
+        }, wantType, 0.95);
     }, 400);
 });
 
 // =========================================================
 // 9. Smart Compressor Logic (Real-Time Estimation & Quality)
 // =========================================================
+
+// Full-size copy of the source. JPG has no transparency, so fill white first (otherwise it turns black).
+function buildSourceCanvas(mime) {
+    const c = document.createElement("canvas");
+    c.width = originalWidth;
+    c.height = originalHeight;
+    const cctx = c.getContext("2d");
+    if (mime === "image/jpeg") {
+        cctx.fillStyle = "#ffffff";
+        cctx.fillRect(0, 0, c.width, c.height);
+    }
+    cctx.drawImage(originalImage, 0, 0);
+    return c;
+}
+
 compressionQuality.addEventListener("input", () => {
     qualityDisplay.textContent = `${compressionQuality.value}%`;
     updateCompressionEstimate();
@@ -434,11 +478,7 @@ function updateCompressionEstimate() {
     const quality = parseFloat(compressionQuality.value) / 100;
     const mime = exportFormatSelect.value;
 
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = originalWidth;
-    tempCanvas.height = originalHeight;
-    const tCtx = tempCanvas.getContext("2d");
-    tCtx.drawImage(originalImage, 0, 0);
+    const tempCanvas = buildSourceCanvas(mime);
 
     tempCanvas.toBlob((blob) => {
         if (!blob) return;
@@ -468,11 +508,7 @@ executeCompressBtn.addEventListener("click", async (e) => {
     const mime = exportFormatSelect.value;
     let quality = parseFloat(compressionQuality.value) / 100;
 
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = originalWidth;
-    tempCanvas.height = originalHeight;
-    const tCtx = tempCanvas.getContext("2d");
-    tCtx.drawImage(originalImage, 0, 0);
+    const tempCanvas = buildSourceCanvas(mime);
 
     if (!isNaN(targetKB) && targetKB > 0 && mime !== "image/png") {
         const targetBytes = targetKB * 1024;
@@ -481,7 +517,7 @@ executeCompressBtn.addEventListener("click", async (e) => {
         for (let i = 0; i < 6; i++) {
             quality = (minQ + maxQ) / 2;
             const b = await new Promise((r) => tempCanvas.toBlob(r, mime, quality));
-            if (b.size > targetBytes) {
+            if (b && b.size > targetBytes) {
                 maxQ = quality;
             } else {
                 minQ = quality;
@@ -490,6 +526,11 @@ executeCompressBtn.addEventListener("click", async (e) => {
     }
 
     tempCanvas.toBlob((blob) => {
+        if (!blob) {
+            loadingOverlay.classList.add("hidden");
+            alert("Could not compress the image. It may be too large for this browser.");
+            return;
+        }
         const outputUrl = URL.createObjectURL(blob);
         loadingOverlay.classList.add("hidden");
         thankYouOverlay.classList.remove("hidden");
@@ -504,11 +545,13 @@ executeCompressBtn.addEventListener("click", async (e) => {
 // 10. Reset & Clear State
 // =========================================================
 function resetState() {
+    uploadToken++;
     destroyCropper();
     originalImage = new Image();
     originalFile = null;
     originalWidth = 0;
     originalHeight = 0;
+    originalFileSize = 0;
     fileInput.value = "";
     targetSizeInput.value = "";
     controlsCard.style.display = "none";

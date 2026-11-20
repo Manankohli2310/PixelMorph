@@ -557,40 +557,30 @@ function encodeBmp(canvas) {                       // 24-bit uncompressed BMP
   return new Blob([buf], { type: 'image/bmp' });
 }
 
-async function encodeIco(bmp) {                    // multi-size ICO, PNG-compressed entries, letterboxed
-  const maxDim = Math.max(bmp.width, bmp.height);
-  let sizes = CONFIG.ICO_SIZES.filter((s) => s <= maxDim);
-  if (sizes.length < 2) sizes = [16, 32];
-  const pngs = [];
-  for (const s of sizes) {
-    const c = document.createElement('canvas');
-    c.width = c.height = s;
-    const ctx = c.getContext('2d');
-    ctx.imageSmoothingQuality = 'high';
-    const k = Math.min(s / bmp.width, s / bmp.height);
-    const dw = Math.max(1, Math.round(bmp.width * k)), dh = Math.max(1, Math.round(bmp.height * k));
-    ctx.drawImage(bmp.source, (s - dw) / 2, (s - dh) / 2, dw, dh);
-    const b = await canvasToBlob(c, 'image/png');
-    pngs.push(new Uint8Array(await b.arrayBuffer()));
-    c.width = 0;
-  }
-  const headLen = 6 + 16 * sizes.length;
-  const total = pngs.reduce((a, p) => a + p.length, headLen);
-  const out = new Uint8Array(total), dv = new DataView(out.buffer);
-  dv.setUint16(2, 1, true);
-  dv.setUint16(4, sizes.length, true);
-  let off = headLen;
-  sizes.forEach((s, i) => {
-    const e = 6 + 16 * i;
-    dv.setUint8(e, s >= 256 ? 0 : s);
-    dv.setUint8(e + 1, s >= 256 ? 0 : s);
-    dv.setUint16(e + 4, 1, true);
-    dv.setUint16(e + 6, 32, true);
-    dv.setUint32(e + 8, pngs[i].length, true);
-    dv.setUint32(e + 12, off, true);
-    out.set(pngs[i], off);
-    off += pngs[i].length;
-  });
+async function encodeIco(bmp, w, h) {              // single-entry ICO, PNG-compressed, keeps original size
+  const c = document.createElement('canvas');
+  c.width = w;
+  c.height = h;
+  const ctx = c.getContext('2d');
+  if (!ctx) throw new Error('Image too large for this browser');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(bmp.source, 0, 0, w, h);
+  let png;
+  try {
+    png = new Uint8Array(await (await canvasToBlob(c, 'image/png')).arrayBuffer());
+  } finally { c.width = c.height = 0; }
+
+  const headLen = 6 + 16;                          // ICONDIR + one ICONDIRENTRY
+  const out = new Uint8Array(headLen + png.length), dv = new DataView(out.buffer);
+  dv.setUint16(2, 1, true);                        // type = icon
+  dv.setUint16(4, 1, true);                        // image count = 1
+  dv.setUint8(6, w >= 256 ? 0 : w);                // 0 means "256 or larger"
+  dv.setUint8(7, h >= 256 ? 0 : h);
+  dv.setUint16(10, 1, true);                       // planes
+  dv.setUint16(12, 32, true);                      // bit depth
+  dv.setUint32(14, png.length, true);              // data size
+  dv.setUint32(18, headLen, true);                 // data offset
+  out.set(png, headLen);
   return new Blob([out], { type: 'image/x-icon' });
 }
 
@@ -611,7 +601,8 @@ async function convertItem(item, mode) {
   const bmp = await decode(item.blob);
   try {
     if (item.format === 'ico') {
-      return { blob: await encodeIco(bmp), ext: 'ico', note: mode !== 'original' ? 'ICO ignores the resolution setting' : '' };
+      const { tw, th, note } = targetSize(bmp.width, bmp.height, mode);
+      return { blob: await encodeIco(bmp, tw, th), ext: 'ico', note };
     }
     const { tw, th, note } = targetSize(bmp.width, bmp.height, mode);
     const canvas = document.createElement('canvas');

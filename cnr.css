@@ -30,6 +30,8 @@ body::-webkit-scrollbar-track {
 }
 
 :root {
+    color-scheme: dark; /* makes native popups, scrollbars and spinners dark */
+
     --bg-black: #050507;
     --card-bg: rgba(12, 16, 20, 0.78);
     --card-border: rgba(6, 182, 212, 0.18);
@@ -46,6 +48,12 @@ body::-webkit-scrollbar-track {
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
+
+    /* Form control tokens */
+    --field-bg: #090d12;
+    --field-border: rgba(6, 182, 212, 0.22);
+    --field-border-hover: rgba(6, 182, 212, 0.45);
+    --field-ring: rgba(6, 182, 212, 0.18);
 }
 
 html, body {
@@ -590,25 +598,73 @@ body {
     color: var(--text-secondary);
 }
 
+/* =========================================================
+   Form Controls: Inputs, Dropdowns, Slider (Cyber Cyan Theme)
+   ========================================================= */
+
+/* ---------- Text / number inputs ---------- */
 .styled-input {
-    background: #090d12;
-    border: 1px solid rgba(6, 182, 212, 0.22);
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: linear-gradient(180deg, rgba(11, 16, 22, 0.95) 0%, rgba(7, 10, 14, 0.95) 100%);
+    border: 1px solid var(--field-border);
     color: #ffffff;
     font-size: 13.5px;
+    font-weight: 600;
     padding: 10px 12px;
     border-radius: 8px;
     outline: none;
-    transition: all 0.2s;
+    caret-color: var(--cyan-light);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.styled-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 500;
+    opacity: 1;
+}
+
+.styled-input:hover {
+    border-color: var(--field-border-hover);
 }
 
 .styled-input:focus {
     border-color: var(--cyan-primary);
-    box-shadow: 0 0 10px rgba(6, 182, 212, 0.25);
+    background: #0a1117;
+    box-shadow: 0 0 0 3px var(--field-ring), 0 0 16px rgba(6, 182, 212, 0.25);
+}
+
+.styled-input::selection {
+    background: rgba(6, 182, 212, 0.4);
+    color: #ffffff;
+}
+
+/* Hide the default white spinner arrows so the field matches the theme */
+.styled-input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+.styled-input[type="number"]::-webkit-outer-spin-button,
+.styled-input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+/* Browser autofill keeps the dark theme */
+.styled-input:-webkit-autofill,
+.styled-input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #ffffff;
+    caret-color: var(--cyan-light);
+    box-shadow: 0 0 0 1000px #0a1117 inset;
+    transition: background-color 9999s ease-in-out 0s;
 }
 
 .aspect-lock-btn {
-    background: #090d12;
-    border: 1px solid rgba(6, 182, 212, 0.22);
+    background: var(--field-bg);
+    border: 1px solid var(--field-border);
     color: var(--text-secondary);
     padding: 10px 14px;
     border-radius: 8px;
@@ -619,10 +675,204 @@ body {
     text-align: center;
 }
 
+.aspect-lock-btn:hover {
+    border-color: var(--field-border-hover);
+    color: #ffffff;
+}
+
 .aspect-lock-btn.active {
     border-color: var(--cyan-primary);
     background: rgba(6, 182, 212, 0.12);
     color: var(--cyan-light);
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.2);
+}
+
+/* ---------- Dropdown (select) ---------- */
+.select-container {
+    position: relative;
+}
+
+.select-container select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    background-color: var(--field-bg);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367e8f9' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px 14px;
+    color: #ffffff;
+    border: 1px solid var(--field-border);
+    padding: 10px 38px 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.select-container select:hover {
+    border-color: var(--field-border-hover);
+}
+
+.select-container select:focus {
+    border-color: var(--cyan-primary);
+    box-shadow: 0 0 0 3px var(--field-ring), 0 0 16px rgba(6, 182, 212, 0.25);
+}
+
+/* Option list for browsers that still use the classic popup */
+.select-container select option {
+    background-color: #0b1118;
+    color: #f1f5f9;
+    padding: 10px 12px;
+}
+
+.select-container select option:checked {
+    background-color: #0e3a44;
+    color: var(--cyan-light);
+}
+
+/* Fully themed dropdown list (Chrome / Edge 135+) */
+@supports (appearance: base-select) {
+    .select-container select,
+    .select-container select::picker(select) {
+        appearance: base-select;
+        -webkit-appearance: base-select;
+    }
+
+    .select-container select {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background-image: none;
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .select-container select::picker-icon {
+        content: "";
+        flex-shrink: 0;
+        width: 7px;
+        height: 7px;
+        border-right: 2px solid var(--cyan-light);
+        border-bottom: 2px solid var(--cyan-light);
+        transform: translateY(-2px) rotate(45deg);
+        transition: transform 0.2s ease;
+    }
+
+    .select-container select:open::picker-icon {
+        transform: translateY(2px) rotate(-135deg);
+    }
+
+    .select-container select:open {
+        border-color: var(--cyan-primary);
+        box-shadow: 0 0 0 3px var(--field-ring), 0 0 16px rgba(6, 182, 212, 0.25);
+    }
+
+    .select-container select::picker(select) {
+        background: rgba(10, 14, 18, 0.97);
+        border: 1px solid var(--card-border-hover);
+        border-radius: 10px;
+        padding: 6px;
+        margin-top: 6px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 24px rgba(6, 182, 212, 0.15);
+        scrollbar-width: thin;
+        scrollbar-color: rgba(6, 182, 212, 0.35) transparent;
+    }
+
+    .select-container select option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 12px;
+        border-radius: 6px;
+        background-color: transparent;
+        color: #e2e8f0;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .select-container select option:hover,
+    .select-container select option:focus-visible {
+        background-color: rgba(6, 182, 212, 0.14);
+        color: #ffffff;
+    }
+
+    .select-container select option:checked {
+        background: var(--gradient-cyan);
+        color: #ffffff;
+    }
+
+    .select-container select option::checkmark {
+        display: none;
+    }
+}
+
+/* ---------- Range slider ---------- */
+.styled-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    margin-top: 10px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.2);
+    cursor: pointer;
+    outline: none;
+    accent-color: var(--cyan-primary);
+}
+
+.styled-slider::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.2);
+}
+
+.styled-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: var(--gradient-cyan);
+    border: 2px solid #050507;
+    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.45), 0 0 12px rgba(6, 182, 212, 0.6);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.styled-slider:hover::-webkit-slider-thumb {
+    transform: scale(1.12);
+}
+
+.styled-slider:active::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.3), 0 0 16px rgba(6, 182, 212, 0.8);
+}
+
+.styled-slider::-moz-range-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.2);
+}
+
+.styled-slider::-moz-range-progress {
+    height: 6px;
+    border-radius: 9999px;
+    background: var(--gradient-cyan);
+}
+
+.styled-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--gradient-cyan);
+    border: 2px solid #050507;
+    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.45), 0 0 12px rgba(6, 182, 212, 0.6);
 }
 
 /* Presets & Scale Rows */
@@ -749,13 +999,6 @@ body {
     font-weight: 700;
 }
 
-.styled-slider {
-    width: 100%;
-    accent-color: var(--cyan-primary);
-    cursor: pointer;
-    margin-top: 6px;
-}
-
 .input-with-unit {
     position: relative;
     display: flex;
@@ -773,18 +1016,7 @@ body {
     font-size: 12px;
     font-weight: 700;
     color: var(--text-muted);
-}
-
-.select-container select {
-    width: 100%;
-    background: #090d12;
-    color: #ffffff;
-    border: 1px solid rgba(6, 182, 212, 0.22);
-    padding: 10px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    outline: none;
-    cursor: pointer;
+    pointer-events: none;
 }
 
 /* Footer Actions */
@@ -1084,8 +1316,8 @@ body {
     .sub-toggle-btn { flex: 1; padding: 10px 8px; font-size: 12.5px; }
 
     /* 16px stops iOS Safari from zooming the page when an input is focused */
-    .styled-input,
-    .select-container select { font-size: 16px; padding: 11px 12px; }
+    .styled-input { font-size: 16px; padding: 11px 12px; }
+    .select-container select { font-size: 16px; padding-top: 11px; padding-bottom: 11px; }
     .aspect-lock-btn { width: 100%; padding: 11px 12px; }
 
     /* Presets */
