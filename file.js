@@ -4,7 +4,7 @@
 // ===== Config =====
 const CONFIG = {
   RESOLUTIONS: { '1080p': [1920, 1080], '720p': [1280, 720], '480p': [854, 480] },
-  ICO_SIZES: [16, 32, 48, 64, 128, 256],
+  ICO_MAX: 256,                  // ICO hard limit that browsers/VS Code can display
   MAX_PIXELS: 16000000,          // iOS Safari canvas limit is ~16.7M
   MAX_FILE_BYTES: 100 * 1024 * 1024,
   ICON_MAX_DIM: 512,
@@ -557,14 +557,22 @@ function encodeBmp(canvas) {                       // 24-bit uncompressed BMP
   return new Blob([buf], { type: 'image/bmp' });
 }
 
-async function encodeIco(bmp, w, h) {              // single-entry ICO, PNG-compressed, keeps original size
+// Single-entry ICO (PNG-compressed). ICO can't be displayed above 256px in browsers/VS Code,
+// so larger images are scaled down proportionally (longest side = 256) and the header
+// size always matches the real PNG size.
+async function encodeIco(bmp, w, h) {
+  const s = Math.min(1, CONFIG.ICO_MAX / Math.max(w, h));
+  const ow = Math.max(1, Math.round(w * s));
+  const oh = Math.max(1, Math.round(h * s));
+
   const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
+  c.width = ow;
+  c.height = oh;
   const ctx = c.getContext('2d');
   if (!ctx) throw new Error('Image too large for this browser');
+  ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(bmp.source, 0, 0, w, h);
+  ctx.drawImage(bmp.source, 0, 0, ow, oh);
   let png;
   try {
     png = new Uint8Array(await (await canvasToBlob(c, 'image/png')).arrayBuffer());
@@ -574,14 +582,14 @@ async function encodeIco(bmp, w, h) {              // single-entry ICO, PNG-comp
   const out = new Uint8Array(headLen + png.length), dv = new DataView(out.buffer);
   dv.setUint16(2, 1, true);                        // type = icon
   dv.setUint16(4, 1, true);                        // image count = 1
-  dv.setUint8(6, w >= 256 ? 0 : w);                // 0 means "256 or larger"
-  dv.setUint8(7, h >= 256 ? 0 : h);
+  dv.setUint8(6, ow >= 256 ? 0 : ow);              // 0 means exactly 256
+  dv.setUint8(7, oh >= 256 ? 0 : oh);
   dv.setUint16(10, 1, true);                       // planes
   dv.setUint16(12, 32, true);                      // bit depth
   dv.setUint32(14, png.length, true);              // data size
   dv.setUint32(18, headLen, true);                 // data offset
   out.set(png, headLen);
-  return new Blob([out], { type: 'image/x-icon' });
+  return { blob: new Blob([out], { type: 'image/x-icon' }), w: ow, h: oh };
 }
 
 // ===== Conversion =====
@@ -602,7 +610,10 @@ async function convertItem(item, mode) {
   try {
     if (item.format === 'ico') {
       const { tw, th, note } = targetSize(bmp.width, bmp.height, mode);
-      return { blob: await encodeIco(bmp, tw, th), ext: 'ico', note };
+      const r = await encodeIco(bmp, tw, th);
+      const notes = [note];
+      if (r.w !== tw || r.h !== th) notes.push(`ICO max size is ${CONFIG.ICO_MAX}px, resized to ${r.w}×${r.h}`);
+      return { blob: r.blob, ext: 'ico', note: notes.filter(Boolean).join('; ') };
     }
     const { tw, th, note } = targetSize(bmp.width, bmp.height, mode);
     const canvas = document.createElement('canvas');
