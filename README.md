@@ -49,7 +49,7 @@ Both versions remain accessible, allowing users and developers to explore the pr
 
 ---
 
-# 🟦 Version 1.0 – The Original Experience
+# Version 1.0 – The Original Experience
 
 <a id="v1-overview"></a>
 
@@ -83,7 +83,7 @@ Convert images between supported formats, including PNG, JPG, and ICO.
 
 Convert images into PDF documents for easier sharing and documentation.
 
-![V1 Image to PDF](assets/ImageToPDFV1.png)
+![V1 Image to PDF](assets/ImgToPDFV1.png)
 
 ### 3. Image Resizer & Compressor
 
@@ -95,7 +95,7 @@ Reduce image file sizes to make them easier to store, share, and upload.
 
 ---
 
-# 🟪 Version 2.0 – The Next Evolution
+# Version 2.0 – The Next Evolution
 
 <a id="v2-overview"></a>
 
@@ -137,33 +137,19 @@ While retaining the core idea of the original version, V2 takes PixelMorph furth
 
 Convert images between supported formats with an improved interface and streamlined workflow.
 
-![V2 Image Converter](assets/screenshots/v2/image-converter.png)
+![V2 Image Converter](assets/ImageConverterV2.png)
 
-### 2. Image Resizer
+### 2. Image to PDF Converter
 
-Resize images with a more refined interface and convenient controls.
+Transform images into PDF documents through an improved conversion experience. Or PDF To Images
 
-![V2 Image Resizer](assets/screenshots/v2/image-resizer.png)
+![V2 Image to PDF](assets/ImgToPDFV2.png)
 
-### 3. Image Compressor
+### 3. Image Resizer & Compressor
 
-Compress images to reduce their file size while maintaining the desired output quality.
+Resize/Crop images with a more refined interface and Compress images to reduce their file size while maintaining the desired output quality.
 
-![V2 Image Compressor](assets/screenshots/v2/image-compressor.png)
-
-### 4. Image to PDF Converter
-
-Transform images into PDF documents through an improved conversion experience.
-
-![V2 Image to PDF](assets/screenshots/v2/image-to-pdf.png)
-
-### 5. Additional Tools
-
-V2 introduces additional functionality beyond the original set of tools.
-
-<!-- Add individual tool headings, descriptions and screenshots here as the V2 feature list is finalized. -->
-
-![V2 Additional Tools](assets/screenshots/v2/additional-tools.png)
+![V2 Image Resizer & Compressor](assets/Resizer&CompressorV2.png)
 
 ---
 
@@ -216,7 +202,7 @@ If you find a bug or have an idea for improving PixelMorph, feel free to open an
 
 **Manan Kohli**
 
-- GitHub: [@manan-kohli](https://github.com/manan-kohli)
+- GitHub: [@manankohli2310](https://github.com/Manankohli2310)
 - Project: [PixelMorph](https://manankohli2310.github.io/PixelMorph/)
 
 ---
